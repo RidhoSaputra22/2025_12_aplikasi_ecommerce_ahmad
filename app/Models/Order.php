@@ -14,6 +14,14 @@ class Order extends Model
         'payment_status'
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($order) {
+            // Generate a unique order number
+            $order->order_number = 'ORD-' . strtoupper(uniqid());
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

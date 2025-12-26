@@ -14,12 +14,12 @@ class CategoriesTable
     {
         return $table
             ->columns([
-                TextColumn::make('parent_id')
-                    ->numeric()
-                    ->sortable(),
+
                 TextColumn::make('name')
+                    ->label('Nama Kategori')
                     ->searchable(),
                 TextColumn::make('slug')
+                    ->label('Kategori Slug')
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()

@@ -14,17 +14,22 @@ class OrdersTable
     {
         return $table
             ->columns([
-                TextColumn::make('user_id')
-                    ->numeric()
+                TextColumn::make('user.name')
+                    ->label('Customer')
                     ->sortable(),
                 TextColumn::make('order_number')
+                    ->label('Order #')
                     ->searchable(),
                 TextColumn::make('total_amount')
+                    ->label('Total Harga')
                     ->numeric()
+                    ->money('IDR')
                     ->sortable(),
                 TextColumn::make('status')
+                    ->label('Status')
                     ->badge(),
                 TextColumn::make('payment_status')
+                    ->label('Status Pembayaran')
                     ->badge(),
                 TextColumn::make('created_at')
                     ->dateTime()

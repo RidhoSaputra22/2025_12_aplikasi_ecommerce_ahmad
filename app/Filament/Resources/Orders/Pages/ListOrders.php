@@ -4,16 +4,24 @@ namespace App\Filament\Resources\Orders\Pages;
 
 use Closure;
 use App\Models\Role;
+use App\Models\Order;
+use App\Models\Payment;
+use App\Models\Shipment;
+use App\Models\OrderItem;
+use App\Models\OrderVendor;
 use Filament\Actions\Action;
 use App\Models\ProductVariant;
 use Filament\Actions\CreateAction;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Select;
 use Illuminate\Support\Facades\Blade;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Wizard;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Wizard\Step;
@@ -170,8 +178,117 @@ class ListOrders extends ListRecords
                 ->modalWidth('7xl')
 
                 ->action(function (array $data) {
-                    // Handle order creation logic here
+                    try {
+                        // Mulai transaksi database
+                        DB::beginTransaction();
 
+                        // Hitung total amount
+                        $totalAmount = 0;
+                        foreach ($data['items'] as $item) {
+                            $variant = ProductVariant::with('product')->find($item['product_variant_id']);
+                            $itemTotal = $variant->price * $item['quantity'];
+                            $totalAmount += $itemTotal;
+                        }
+
+                        $totalAmount += $data['shipping_cost'];
+
+                        // Buat order baru
+                        $order = Order::create([
+                            'user_id' => Auth::id(),
+                            'total_amount' => $totalAmount,
+                            'status' => 'pending',
+                            'payment_status' => 'unpaid'
+                        ]);
+
+                        // Kelompokkan items berdasarkan vendor
+                        $vendorItems = [];
+                        foreach ($data['items'] as $item) {
+                            $variant = ProductVariant::with('product.vendor')->find($item['product_variant_id']);
+                            $vendorId = $variant->product->vendor_id;
+
+                            if (!isset($vendorItems[$vendorId])) {
+                                $vendorItems[$vendorId] = [];
+                            }
+
+                            $vendorItems[$vendorId][] = [
+                                'variant' => $variant,
+                                'quantity' => $item['quantity']
+                            ];
+                        }
+
+                        // Buat OrderItem dan OrderVendor untuk setiap vendor
+                        foreach ($vendorItems as $vendorId => $items) {
+                            $vendorTotal = 0;
+
+                            foreach ($items as $item) {
+                                $itemTotal = $item['variant']->price * $item['quantity'];
+                                $vendorTotal += $itemTotal;
+
+                                // Buat order item
+                                OrderItem::create([
+                                    'order_id' => $order->id,
+                                    'product_variant_id' => $item['variant']->id,
+                                    'quantity' => $item['quantity'],
+                                    'price' => $item['variant']->price,
+                                    'total' => $itemTotal
+                                ]);
+
+                                // Kurangi stok
+                                $item['variant']->decrement('stock', $item['quantity']);
+                            }
+
+                            // Buat order vendor
+                            $orderVendor = OrderVendor::create([
+                                'order_id' => $order->id,
+                                'vendor_id' => $vendorId,
+                                'total_amount' => $vendorTotal,
+                                'status' => 'pending'
+                            ]);
+
+                            // Buat shipment
+                            Shipment::create([
+                                'order_vendor_id' => $orderVendor->id,
+                                'shipping_cost' => $data['shipping_cost'],
+                                'status' => 'pending'
+                            ]);
+                        }
+
+                        // Buat payment record
+                        Payment::create([
+                            'order_id' => $order->id,
+                            'amount' => $totalAmount,
+                            'method' => $data['payment_method'],
+                            'status' => 'pending',
+                            'receiver_name' => $data['receiver_name'],
+                            'phone' => $data['phone'],
+                            'province' => $data['province'],
+                            'city' => $data['city'],
+                            'district' => $data['district'],
+                            'postal_code' => $data['postal_code'],
+                            'address' => $data['address'],
+                            'delivery_date' => $data['delivery_date']
+                        ]);
+
+                        DB::commit();
+
+                        // Tampilkan notifikasi sukses
+                        Notification::make()
+                            ->title('Order Berhasil Dibuat')
+                            ->body('Order #' . $order->order_number . ' telah dibuat dengan total Rp ' . number_format($totalAmount, 0, ',', '.'))
+                            ->success()
+                            ->send();
+
+                        // Redirect ke halaman order
+                        redirect('/admin/orders/' . $order->id);
+                    } catch (\Exception $e) {
+                        DB::rollBack();
+
+                        Notification::make()
+                            ->title('Gagal Membuat Order')
+                            ->body('Terjadi kesalahan: ' . $e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
                 }),
         ];
     }

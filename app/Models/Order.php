@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Enums\OrderStatus;
+use App\Enums\OrderPaymentStatus;
 
 class Order extends Model
 {
@@ -12,6 +14,11 @@ class Order extends Model
         'total_amount',
         'status',
         'payment_status'
+    ];
+
+    protected $casts = [
+        'status' => OrderStatus::class,
+        'payment_status' => OrderPaymentStatus::class,
     ];
 
     protected static function booted()

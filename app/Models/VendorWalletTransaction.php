@@ -3,11 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Enums\VendorWalletTransactionType;
 
 class VendorWalletTransaction extends Model
 {
-    //
-
     protected $fillable = [
         'vendor_wallet_id',
         'type',
@@ -16,5 +15,7 @@ class VendorWalletTransaction extends Model
         'reference_id',
     ];
 
-
+    protected $casts = [
+        'type' => VendorWalletTransactionType::class,
+    ];
 }

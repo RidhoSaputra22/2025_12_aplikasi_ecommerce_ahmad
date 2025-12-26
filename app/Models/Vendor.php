@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Enums\VendorStatus;
 
 class Vendor extends Model
 {
@@ -16,6 +17,10 @@ class Vendor extends Model
         'is_verified',
         'rating',
         'status'
+    ];
+
+    protected $casts = [
+        'status' => VendorStatus::class,
     ];
 
     public function user()

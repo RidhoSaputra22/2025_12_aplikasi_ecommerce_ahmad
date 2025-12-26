@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Enums\OrderVendorStatus;
 
 class OrderVendor extends Model
 {
@@ -11,6 +12,10 @@ class OrderVendor extends Model
         'vendor_id',
         'subtotal',
         'status'
+    ];
+
+    protected $casts = [
+        'status' => OrderVendorStatus::class,
     ];
 
     public function order()

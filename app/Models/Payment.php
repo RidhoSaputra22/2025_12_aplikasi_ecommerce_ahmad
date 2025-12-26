@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Enums\PaymentStatus;
 
 class Payment extends Model
 {
@@ -17,7 +18,8 @@ class Payment extends Model
     ];
 
     protected $casts = [
-        'paid_at' => 'datetime'
+        'status' => PaymentStatus::class,
+        'paid_at' => 'datetime',
     ];
 
     public function order()

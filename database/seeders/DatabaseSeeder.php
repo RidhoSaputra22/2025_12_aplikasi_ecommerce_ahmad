@@ -34,20 +34,20 @@ class DatabaseSeeder extends Seeder
         User::insert([
             [
                 'name' => 'Admin',
-                'email' => 'admin@mail.com',
-                'password' => bcrypt('password'),
+                'email' => 'admin@gmail.com',
+                'password' => bcrypt('admin'),
                 'status' => 'active'
             ],
             [
                 'name' => 'Vendor One',
-                'email' => 'vendor@mail.com',
-                'password' => bcrypt('password'),
+                'email' => 'vendor@gmail.com',
+                'password' => bcrypt('vendor'),
                 'status' => 'active'
             ],
             [
                 'name' => 'Customer One',
-                'email' => 'customer@mail.com',
-                'password' => bcrypt('password'),
+                'email' => 'customer@gmail.com',
+                'password' => bcrypt('customer'),
                 'status' => 'active'
             ],
         ]);

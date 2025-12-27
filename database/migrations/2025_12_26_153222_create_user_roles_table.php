@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained(table: 'users');
             $table->foreignId('role_id')->constrained(table: 'roles');
             $table->unique(['user_id', 'role_id']);
+
         });
     }
 

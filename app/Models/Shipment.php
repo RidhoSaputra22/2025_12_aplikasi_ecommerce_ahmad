@@ -9,6 +9,7 @@ class Shipment extends Model
 {
     protected $fillable = [
         'order_vendor_id',
+
         'courier',
         'service',
         'tracking_number',
@@ -23,4 +24,14 @@ class Shipment extends Model
         'shipped_at' => 'datetime',
         'delivered_at' => 'datetime',
     ];
+
+    public function orderVendor()
+    {
+        return $this->belongsTo(OrderVendor::class);
+    }
+
+    public function shipmentAddress()
+    {
+        return $this->hasOne(ShipmentAddress::class);
+    }
 }

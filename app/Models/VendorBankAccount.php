@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class VendorBankAccount extends Model
 {
     //
-
     protected $fillable = [
         'vendor_id',
         'bank_name',
@@ -15,4 +14,9 @@ class VendorBankAccount extends Model
         'account_holder',
         'is_active',
     ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 }

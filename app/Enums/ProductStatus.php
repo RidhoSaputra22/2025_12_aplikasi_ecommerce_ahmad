@@ -14,7 +14,7 @@ enum ProductStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Draft => 'Draf',
             self::Active => 'Aktif',
             self::Archived => 'Diarsipkan',
@@ -23,7 +23,7 @@ enum ProductStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getColor(): string|array|null
     {
-        return match($this) {
+        return match ($this) {
             self::Draft => 'gray',
             self::Active => 'success',
             self::Archived => 'warning',
@@ -32,7 +32,7 @@ enum ProductStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getIcon(): ?string
     {
-        return match($this) {
+        return match ($this) {
             self::Draft => 'heroicon-m-document-text',
             self::Active => 'heroicon-m-check-circle',
             self::Archived => 'heroicon-m-archive-box',

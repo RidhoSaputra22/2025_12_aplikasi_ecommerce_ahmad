@@ -14,7 +14,7 @@ enum VendorStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Active => 'Aktif',
             self::Inactive => 'Tidak Aktif',
             self::Banned => 'Dilarang',
@@ -23,7 +23,7 @@ enum VendorStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getColor(): string|array|null
     {
-        return match($this) {
+        return match ($this) {
             self::Active => 'success',
             self::Inactive => 'warning',
             self::Banned => 'danger',
@@ -32,7 +32,7 @@ enum VendorStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getIcon(): ?string
     {
-        return match($this) {
+        return match ($this) {
             self::Active => 'heroicon-m-check-circle',
             self::Inactive => 'heroicon-m-clock',
             self::Banned => 'heroicon-m-hand-raised',

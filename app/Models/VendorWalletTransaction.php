@@ -18,4 +18,9 @@ class VendorWalletTransaction extends Model
     protected $casts = [
         'type' => VendorWalletTransactionType::class,
     ];
+
+    public function vendorWallet()
+    {
+        return $this->belongsTo(VendorWallet::class);
+    }
 }

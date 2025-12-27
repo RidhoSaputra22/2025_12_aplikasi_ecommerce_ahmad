@@ -17,6 +17,7 @@ use App\Models\OrderVendor;
 use App\Models\VendorWallet;
 use App\Models\VendorAddress;
 use App\Models\ProductVariant;
+use App\Models\ShipmentAddress;
 use Illuminate\Database\Seeder;
 use App\Models\VendorBankAccount;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -140,9 +141,15 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Shipment::insert([
-            ['order_vendor_id' => 1, 'courier' => 'JNE', 'service' => 'REG', 'shipping_cost' => 20000],
+            ['order_vendor_id' => 1,  'courier' => 'JNE', 'service' => 'REG', 'shipping_cost' => 20000],
             ['order_vendor_id' => 2, 'courier' => 'J&T', 'service' => 'EZ', 'shipping_cost' => 15000],
             ['order_vendor_id' => 3, 'courier' => 'SiCepat', 'service' => 'BEST', 'shipping_cost' => 18000],
+        ]);
+
+        ShipmentAddress::insert([
+            ['user_id' => 3, 'shipment_id' => 1, 'province' => 'Jawa Barat', 'city' => 'Bandung', 'district' => 'Cicendo', 'postal_code' => '40173', 'address' => 'Jl. Pelanggan 1'],
+            ['user_id' => 3, 'shipment_id' => 2, 'province' => 'DKI Jakarta', 'city' => 'Jakarta', 'district' => 'Setiabudi', 'postal_code' => '12910', 'address' => 'Jl. Pelanggan 2'],
+            ['user_id' => 3, 'shipment_id' => 3, 'province' => 'Jawa Timur', 'city' => 'Surabaya', 'district' => 'Wonokromo', 'postal_code' => '60243', 'address' => 'Jl. Pelanggan 3'],
         ]);
 
         OrderItem::insert([

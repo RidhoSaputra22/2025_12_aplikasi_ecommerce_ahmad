@@ -28,9 +28,9 @@ class User extends Authenticatable
         'last_login_at' => 'datetime',
     ];
 
-    public function roles()
+    public function userRoles()
     {
-        return $this->belongsToMany(Role::class, 'user_roles');
+        return $this->hasOne(UserRole::class);
     }
 
     public function vendor()
@@ -46,5 +46,10 @@ class User extends Authenticatable
     public function cart()
     {
         return $this->hasOne(Cart::class);
+    }
+
+    public function addresses()
+    {
+        return $this->hasMany(ShipmentAddress::class);
     }
 }

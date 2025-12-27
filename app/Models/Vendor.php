@@ -33,13 +33,18 @@ class Vendor extends Model
         return $this->hasMany(Product::class);
     }
 
-    public function addresses()
+    public function vendorAddresses()
     {
         return $this->hasMany(VendorAddress::class);
     }
 
-    public function wallet()
+    public function vendorWallet()
     {
         return $this->hasOne(VendorWallet::class);
+    }
+
+    public function vendorBankAccounts()
+    {
+        return $this->hasMany(VendorBankAccount::class);
     }
 }

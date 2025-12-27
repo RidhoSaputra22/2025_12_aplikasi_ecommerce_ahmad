@@ -28,7 +28,7 @@ class OrderVendor extends Model
         return $this->belongsTo(Vendor::class);
     }
 
-    public function items()
+    public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
     }

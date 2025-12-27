@@ -6,24 +6,26 @@ use Illuminate\Database\Eloquent\Model;
 
 class OrderItem extends Model
 {
-    //
-
     protected $fillable = [
-        'order_id',
+        'order_vendor_id',
         'product_variant_id',
         'quantity',
         'price',
         'total',
-        'quantity',
     ];
 
-    public function order()
+    public function orderVendor()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(OrderVendor::class);
     }
 
     public function productVariant()
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    public function review()
+    {
+        return $this->hasOne(Review::class);
     }
 }

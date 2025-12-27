@@ -15,7 +15,7 @@ enum OrderVendorStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Pending => 'Menunggu',
             self::Processed => 'Diproses',
             self::Shipped => 'Dikirim',
@@ -25,7 +25,7 @@ enum OrderVendorStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getColor(): string|array|null
     {
-        return match($this) {
+        return match ($this) {
             self::Pending => 'warning',
             self::Processed => 'info',
             self::Shipped => 'primary',
@@ -35,7 +35,7 @@ enum OrderVendorStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getIcon(): ?string
     {
-        return match($this) {
+        return match ($this) {
             self::Pending => 'heroicon-m-clock',
             self::Processed => 'heroicon-m-cog-6-tooth',
             self::Shipped => 'heroicon-m-truck',

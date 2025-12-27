@@ -13,7 +13,7 @@ enum UserStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Active => 'Aktif',
             self::Suspended => 'Diblokir',
         };
@@ -21,7 +21,7 @@ enum UserStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getColor(): string|array|null
     {
-        return match($this) {
+        return match ($this) {
             self::Active => 'success',
             self::Suspended => 'danger',
         };
@@ -29,7 +29,7 @@ enum UserStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getIcon(): ?string
     {
-        return match($this) {
+        return match ($this) {
             self::Active => 'heroicon-m-check-circle',
             self::Suspended => 'heroicon-m-no-symbol',
         };

@@ -34,7 +34,7 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function vendors()
+    public function orderVendors()
     {
         return $this->hasMany(OrderVendor::class);
     }

@@ -14,7 +14,7 @@ enum PaymentStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getLabel(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Pending => 'Menunggu',
             self::Success => 'Berhasil',
             self::Failed => 'Gagal',
@@ -23,7 +23,7 @@ enum PaymentStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getColor(): string|array|null
     {
-        return match($this) {
+        return match ($this) {
             self::Pending => 'warning',
             self::Success => 'success',
             self::Failed => 'danger',
@@ -32,7 +32,7 @@ enum PaymentStatus: string implements HasColor, HasIcon, HasLabel
 
     public function getIcon(): ?string
     {
-        return match($this) {
+        return match ($this) {
             self::Pending => 'heroicon-m-clock',
             self::Success => 'heroicon-m-check-circle',
             self::Failed => 'heroicon-m-x-circle',

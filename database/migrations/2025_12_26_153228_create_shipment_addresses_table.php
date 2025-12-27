@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('shipment_addresses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('shipment_id')->constrained()->cascadeOnDelete();
             $table->string('province');
             $table->string('city');
             $table->string('district');

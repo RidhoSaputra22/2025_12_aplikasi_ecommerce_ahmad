@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('shipments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_vendor_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('shipment_address_id')->constrained()->cascadeOnDelete();
 
             $table->string('courier');
             $table->string('service');

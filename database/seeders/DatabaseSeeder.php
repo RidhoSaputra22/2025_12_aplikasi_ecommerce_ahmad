@@ -140,17 +140,18 @@ class DatabaseSeeder extends Seeder
             ['order_id' => 3, 'vendor_id' => 3, 'subtotal' => 80000],
         ]);
 
-        Shipment::insert([
-            ['order_vendor_id' => 1,  'courier' => 'JNE', 'service' => 'REG', 'shipping_cost' => 20000],
-            ['order_vendor_id' => 2, 'courier' => 'J&T', 'service' => 'EZ', 'shipping_cost' => 15000],
-            ['order_vendor_id' => 3, 'courier' => 'SiCepat', 'service' => 'BEST', 'shipping_cost' => 18000],
+        ShipmentAddress::insert([
+            ['user_id' => 3, 'province' => 'Jawa Barat', 'city' => 'Bandung', 'district' => 'Cicendo', 'postal_code' => '40173', 'address' => 'Jl. Pelanggan 1'],
+            ['user_id' => 3, 'province' => 'DKI Jakarta', 'city' => 'Jakarta', 'district' => 'Setiabudi', 'postal_code' => '12910', 'address' => 'Jl. Pelanggan 2'],
+            ['user_id' => 3, 'province' => 'Jawa Timur', 'city' => 'Surabaya', 'district' => 'Wonokromo', 'postal_code' => '60243', 'address' => 'Jl. Pelanggan 3'],
         ]);
 
-        ShipmentAddress::insert([
-            ['user_id' => 3, 'shipment_id' => 1, 'province' => 'Jawa Barat', 'city' => 'Bandung', 'district' => 'Cicendo', 'postal_code' => '40173', 'address' => 'Jl. Pelanggan 1'],
-            ['user_id' => 3, 'shipment_id' => 2, 'province' => 'DKI Jakarta', 'city' => 'Jakarta', 'district' => 'Setiabudi', 'postal_code' => '12910', 'address' => 'Jl. Pelanggan 2'],
-            ['user_id' => 3, 'shipment_id' => 3, 'province' => 'Jawa Timur', 'city' => 'Surabaya', 'district' => 'Wonokromo', 'postal_code' => '60243', 'address' => 'Jl. Pelanggan 3'],
+        Shipment::insert([
+            ['order_vendor_id' => 1, 'shipment_address_id' => 1, 'courier' => 'JNE', 'service' => 'REG', 'shipping_cost' => 20000],
+            ['order_vendor_id' => 2, 'shipment_address_id' => 2, 'courier' => 'J&T', 'service' => 'EZ', 'shipping_cost' => 15000],
+            ['order_vendor_id' => 3, 'shipment_address_id' => 3, 'courier' => 'SiCepat', 'service' => 'BEST', 'shipping_cost' => 18000],
         ]);
+
 
         OrderItem::insert([
             ['order_vendor_id' => 1, 'product_variant_id' => 1, 'price' => 10000000, 'quantity' => 1, 'total' => 10000000],

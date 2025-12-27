@@ -33,9 +33,10 @@ class EditOrder extends EditRecord
 
 
         $shipment = $order->orderVendors()->with('shipment')->first()->shipment;
+        $shipmentAddress = $shipment->shipmentAddress;
         $payment = $order->payment;
 
-        // dd($shipment->shipment_address_id);
+        dd($shipment);
 
         $this->form->fill([
             'orderItems' => $orderItems,

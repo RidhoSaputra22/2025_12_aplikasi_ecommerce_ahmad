@@ -2,23 +2,32 @@
 
 namespace App\Filament\Vendor\Resources\Products;
 
-use App\Filament\Vendor\Resources\Products\Pages\CreateProduct;
+use BackedEnum;
+use App\Models\Product;
+use Filament\Tables\Table;
+use Filament\Schemas\Schema;
+use Filament\Resources\Resource;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Vendor\Resources\Products\Pages\EditProduct;
 use App\Filament\Vendor\Resources\Products\Pages\ListProducts;
+use App\Filament\Vendor\Resources\Products\Pages\CreateProduct;
 use App\Filament\Vendor\Resources\Products\Schemas\ProductForm;
 use App\Filament\Vendor\Resources\Products\Tables\ProductsTable;
-use App\Models\Product;
-use BackedEnum;
-use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Table;
+use App\Filament\Vendor\Resources\Products\RelationManagers\ProductVariantRelationManager;
+use UnitEnum;
 
 class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArchiveBox;
+    protected static null|UnitEnum|string $navigationGroup = 'Produk';
+    protected static ?string $navigationLabel = 'Produk';
+    protected static ?string $pluralLabel = 'Produk';
+    protected static ?string $modelLabel = 'Produk';
+
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -36,7 +45,18 @@ class ProductResource extends Resource
     {
         return [
             //
+            ProductVariantRelationManager::class,
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        // Customize the query to only show products for the authenticated vendor
+        $userId = Auth::user()->id;
+        return parent::getEloquentQuery()
+            ->whereHas('vendor', function (Builder $query) use ($userId) {
+                $query->where('user_id', $userId);
+            });
     }
 
     public static function getPages(): array

@@ -16,12 +16,17 @@ use App\Filament\Vendor\Resources\Orders\Pages\ListOrders;
 use App\Filament\Vendor\Resources\Orders\Pages\CreateOrder;
 use App\Filament\Vendor\Resources\Orders\Schemas\OrderForm;
 use App\Filament\Vendor\Resources\Orders\Tables\OrdersTable;
+use UnitEnum;
 
 class OrderResource extends Resource
 {
     protected static ?string $model = Order::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
+    protected static null|UnitEnum|string $navigationGroup = 'Pesanan';
+    protected static ?string $navigationLabel = 'Pesanan';
+    protected static ?string $pluralLabel = 'Pesanan';
+    protected static ?string $modelLabel = 'Pesanan';
 
     protected static ?string $recordTitleAttribute = 'vendor';
 

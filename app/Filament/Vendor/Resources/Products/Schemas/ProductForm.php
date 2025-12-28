@@ -2,10 +2,11 @@
 
 namespace App\Filament\Vendor\Resources\Products\Schemas;
 
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
+use App\Enums\ProductStatus;
 use Filament\Schemas\Schema;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 
 class ProductForm
 {
@@ -13,28 +14,32 @@ class ProductForm
     {
         return $schema
             ->components([
-                TextInput::make('vendor_id')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('category_id')
-                    ->required()
-                    ->numeric(),
+
+                Select::make('category_id')
+                    ->label('Kategori')
+                    ->relationship('category', 'name')
+                    ->required(),
                 TextInput::make('name')
+                    ->label("Nama Produk")
                     ->required(),
-                TextInput::make('slug')
-                    ->required(),
+
                 Textarea::make('description')
+                    ->label("Deskripsi Produk")
                     ->columnSpanFull(),
                 TextInput::make('price')
+                    ->label("Harga Produk")
                     ->required()
                     ->numeric()
-                    ->prefix('$'),
+                    ->prefix('Rp'),
                 TextInput::make('weight')
+                    ->label("Berat Produk")
                     ->required()
                     ->numeric()
+                    ->suffix('gram')
                     ->default(0),
                 Select::make('status')
-                    ->options(['draft' => 'Draft', 'active' => 'Active', 'archived' => 'Archived'])
+                    ->label("Status Produk")
+                    ->options(ProductStatus::class)
                     ->default('draft')
                     ->required(),
             ]);

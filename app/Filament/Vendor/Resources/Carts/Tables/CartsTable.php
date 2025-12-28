@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Vendor\Resources\Products\Tables;
+namespace App\Filament\Vendor\Resources\Carts\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -8,30 +8,15 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class ProductsTable
+class CartsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
             ->columns([
-
-                TextColumn::make('category.name')
-                    ->label('Kategori')
-                    ->sortable(),
-                TextColumn::make('name')
-                    ->label('Nama Produk')
-                    ->searchable(),
-                TextColumn::make('price')
-                    ->label('Harga')
-                    ->money('IDR')
-                    ->sortable(),
-                TextColumn::make('weight')
-                    ->label('Berat (gram)')
+                TextColumn::make('user_id')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('status')
-                    ->label('Status')
-                    ->badge(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

@@ -2,10 +2,11 @@
 
 namespace App\Filament\Resources\Products\Schemas;
 
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
+use App\Enums\ProductStatus;
 use Filament\Schemas\Schema;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 
 class ProductForm
 {
@@ -41,7 +42,7 @@ class ProductForm
                     ->default(0),
                 Select::make('status')
                     ->label("Status Produk")
-                    ->options(['draft' => 'Draft', 'active' => 'Active', 'archived' => 'Archived'])
+                    ->options(ProductStatus::class)
                     ->default('draft')
                     ->required(),
             ]);

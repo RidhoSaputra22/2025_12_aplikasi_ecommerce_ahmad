@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\Shipments\Pages;
+namespace App\Filament\Vendor\Resources\Shipments\Pages;
 
-use App\Filament\Resources\Shipments\ShipmentResource;
+use App\Filament\Vendor\Resources\Shipments\ShipmentResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 

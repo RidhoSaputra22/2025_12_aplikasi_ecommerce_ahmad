@@ -19,7 +19,7 @@ class OrderResource extends Resource
 {
     protected static ?string $model = Order::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingCart;
     protected static null|UnitEnum|string $navigationGroup = 'Order';
     protected static ?string $navigationLabel = 'Order';
     protected static ?string $pluralLabel = 'Order';

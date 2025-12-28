@@ -19,7 +19,7 @@ class VendorResource extends Resource
 {
     protected static ?string $model = Vendor::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
     protected static null|UnitEnum|string $navigationGroup = 'Pengguna';
     protected static ?string $navigationLabel = 'Vendor';
     protected static ?string $pluralLabel = 'Vendor';

@@ -14,8 +14,10 @@ class CartsTable
     {
         return $table
             ->columns([
-                TextColumn::make('user_id')
-                    ->numeric()
+                TextColumn::make('user.name')
+                    ->label('Pelanggan')
+
+
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->dateTime()

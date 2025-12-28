@@ -2,17 +2,19 @@
 
 namespace App\Filament\Vendor\Resources\Orders;
 
-use App\Filament\Vendor\Resources\Orders\Pages\CreateOrder;
+use BackedEnum;
+use App\Models\Order;
+use Filament\Tables\Table;
+use Filament\Schemas\Schema;
+use Filament\Resources\Resource;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Vendor\Resources\Orders\Pages\EditOrder;
 use App\Filament\Vendor\Resources\Orders\Pages\ListOrders;
+use App\Filament\Vendor\Resources\Orders\Pages\CreateOrder;
 use App\Filament\Vendor\Resources\Orders\Schemas\OrderForm;
 use App\Filament\Vendor\Resources\Orders\Tables\OrdersTable;
-use App\Models\Order;
-use BackedEnum;
-use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Table;
 
 class OrderResource extends Resource
 {
@@ -37,6 +39,12 @@ class OrderResource extends Resource
         return [
             //
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $userId = Auth::user()->id;
+        return parent::getEloquentQuery()->where('user_id', $userId);
     }
 
     public static function getPages(): array

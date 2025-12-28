@@ -39,6 +39,7 @@ class EditOrder extends EditRecord
         $data = array_merge($data, [
             'items' => $orderItems,
             'user_id' => $order->user_id,
+            'vendor_id' => $orderVendors->first()->vendor_id,
             'shipment_address_id' => $shipment->shipment_address_id,
             'shipment_courier_id' => $shipment->shipment_courier_id,
             'shipping_cost' => $shipment->shipping_cost,
@@ -46,10 +47,10 @@ class EditOrder extends EditRecord
             'payment_method' => $payment->payment_method,
             'payment_status' => $order->payment_status,
             'status' => $order->status,
+
         ]);
 
-
-
+        // dd($data);
         return $data;
     }
 
@@ -58,74 +59,82 @@ class EditOrder extends EditRecord
     {
         DB::beginTransaction();
         try {
-
-            // dd($data);
-            $orderItemsData = $data['items'];
-
-
-            // Update order
+            // Update order main data
             $record->update([
                 'user_id' => $data['user_id'],
                 'status' => $data['status'],
                 'payment_status' => $data['payment_status'],
             ]);
 
-            // Update order items
-            foreach ($orderItemsData as $itemData) {
-                if (isset($itemData['id'])) {
-                    $orderItem = \App\Models\OrderItem::find($itemData['id']);
-                    if ($orderItem) {
-                        $orderItem->update([
-                            'product_variant_id' => $itemData['product_variant_id'],
-                            'quantity' => $itemData['quantity'],
-                        ]);
-                    }
-                } else {
-                    // ambil order_vendor_id dari product varian
-                    $orderVendor = ProductVariant::find($itemData['product_variant_id'])->orderItems()->first()->orderVendor;
+            // Get or create order vendor
+            $orderVendor = $record->orderVendors()->first();
 
-                    // Jika item tidak memiliki ID, berarti item baru, buat baru
-                    \App\Models\OrderItem::create([
-                        'order_vendor_id' => $orderVendor->id,
-                        'product_variant_id' => $itemData['product_variant_id'],
-                        'quantity' => $itemData['quantity'],
-                        'price' => ProductVariant::find($itemData['product_variant_id'])->price,
-                        'total' => ProductVariant::find($itemData['product_variant_id'])->price * $itemData['quantity'],
-                    ]);
-                }
+            if (!$orderVendor) {
+                $orderVendor = $record->orderVendors()->create([
+                    'vendor_id' => $data['vendor_id'],
+                    'subtotal' => 0,
+                    'status' => \App\Enums\OrderVendorStatus::Pending,
+                ]);
             }
 
-            // Update shipment
-            // $record->orderVendors()->with('shipment')->get()->map(function ($orderVendor) use ($data) {
-            //     $shipment = $orderVendor->shipment;
-            //     $shipment->update([
-            //         'shipment_address_id' => $data['shipment_address_id'],
-            //         'courier' => $data['courier'],
-            //         'service' => $data['service'],
-            //         'shipping_cost' => $data['shipping_cost'],
-            //     ]);
-            // })->first();
+            // Delete existing order items
+            $orderVendor->orderItems()->delete();
+
+            // Calculate subtotal and create new order items
+            $subtotal = 0;
+            foreach ($data['items'] as $item) {
+                $variant = ProductVariant::find($item['product_variant_id']);
+                $itemTotal = $variant->price * $item['quantity'];
+                $subtotal += $itemTotal;
+
+                $orderVendor->orderItems()->create([
+                    'product_variant_id' => $item['product_variant_id'],
+                    'quantity' => $item['quantity'],
+                    'price' => $variant->price,
+                    'total' => $itemTotal,
+                ]);
+            }
+
+            // Update order vendor subtotal
+            $orderVendor->update(['subtotal' => $subtotal, 'vendor_id' => $data['vendor_id']]);
+
+            // Update or create shipment
+            $shipment = $orderVendor->shipment;
+            $shippingCost = $data['shipping_cost'] ?? 0;
+
+            if ($shipment) {
+                $shipment->update([
+                    'shipment_address_id' => $data['shipment_address_id'],
+                    'shipment_courier_id' => $data['shipment_courier_id'],
+                    'shipping_cost' => $shippingCost,
+                ]);
+            } else {
+                $orderVendor->shipment()->create([
+                    'shipment_address_id' => $data['shipment_address_id'],
+                    'shipment_courier_id' => $data['shipment_courier_id'],
+                    'shipping_cost' => $shippingCost,
+                    'status' => \App\Enums\ShipmentStatus::Pending,
+                ]);
+            }
+
+            // Calculate total amount
+            $totalAmount = $subtotal + $shippingCost;
+            $record->update(['total_amount' => $totalAmount]);
 
             // Update payment
-            // $payment = $record->payment;
-
-            // $payment->update([
-            //     'payment_method' => $data['payment_method'],
-            //     'status' => $record->payment_status,
-            //     'amount' => $record->total_amount,
-
-            // ]);
-
-
-
-
+            $payment = $record->payment;
+            if ($payment) {
+                $payment->update([
+                    'payment_method' => $data['payment_method'],
+                    'amount' => $totalAmount,
+                ]);
+            }
 
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
         }
-
 
         return $record;
     }

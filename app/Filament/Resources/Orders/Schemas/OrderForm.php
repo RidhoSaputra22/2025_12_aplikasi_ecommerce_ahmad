@@ -4,17 +4,13 @@ namespace App\Filament\Resources\Orders\Schemas;
 
 use Closure;
 use App\Models\Role;
-use App\Models\User;
-use App\Models\Order;
-use App\Models\UserRole;
-use Filament\Actions\Action;
+use App\Models\Vendor;
+use App\Enums\OrderStatus;
+use App\Enums\OrderPaymentStatus;
 use Filament\Schemas\Schema;
 use App\Models\ProductVariant;
-use App\Models\ShipmentAddress;
 use App\Models\ShipmentCourier;
-use Filament\Forms\Components\Radio;
 use Filament\Support\Enums\TextSize;
-use Filament\Support\Icons\Heroicon;
 use Filament\Forms\Components\Select;
 use Filament\Support\Enums\FontWeight;
 use Filament\Forms\Components\Repeater;
@@ -24,7 +20,6 @@ use App\Filament\Forms\Components\CardRadio;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
-use App\Filament\Resources\Users\Tables\UsersTable;
 use Filament\Forms\Components\Repeater\TableColumn;
 use App\Filament\Resources\Orders\Schemas\OrderFormUtils;
 
@@ -39,6 +34,22 @@ class OrderForm
                 Section::make('Pilih Produk')
                     ->description('Tambahkan produk ke dalam order')
                     ->schema([
+                        Select::make('vendor_id')
+                            ->label('Vendor')
+                            ->options(function () {
+                                return Vendor::all()
+                                    ->pluck('store_name', 'id')
+                                    ->toArray() ?? [];
+                            })
+                            ->required()
+                            ->reactive()
+                            ->afterStateUpdated(function (Get $get, Set $set, $state) {
+                                // Reset items when vendor changes
+                                $set('items', []);
+                                $set('total_amount', 0);
+                                $set('total_amount_display', "Rp 0,00");
+                                $set('total_amount_pembayaran_display', "Rp 0,00");
+                            }),
 
                         Repeater::make('items')
                             ->label('Produk dipesan')
@@ -46,55 +57,46 @@ class OrderForm
                             ->table([
                                 TableColumn::make('Produk'),
                                 TableColumn::make('Jumlah'),
-                                TableColumn::make('Harga Satuan'),
-
                             ])
                             ->schema([
-
-
                                 Select::make('product_variant_id')
                                     ->label('Produk')
+                                    ->disabled(fn(Get $get) => !$get('../../vendor_id'))
                                     ->options(function (Get $get) {
-
                                         $selectedVariants = collect($get('../../items'))
                                             ->pluck('product_variant_id')
                                             ->filter()
                                             ->toArray();
-
                                         $current = $get('product_variant_id');
                                         if ($current) {
                                             $selectedVariants = array_diff($selectedVariants, [$current]);
                                         }
-
-
-
+                                        // return product variant by vendor
                                         return ProductVariant::with('product')
+                                            ->whereHas('product', function ($query) use ($get) {
+                                                $vendorId = $get('../../vendor_id');
+                                                if ($vendorId) {
+                                                    $query->where('vendor_id', $vendorId);
+                                                }
+                                            })
                                             ->where('stock', '>', 0)
                                             ->whereNotIn('id', $selectedVariants)
                                             ->get()
                                             ->mapWithKeys(fn($v) => [
-                                                $v->id => $v->product->name . ' - ' . $v->variant_name
+                                                $v->id => $v->product->name . ' - ' . $v->variant_name . ' - Rp . ' . number_format($v->price, 2, ',', '.')
                                             ]);
                                     })
                                     ->searchable()
                                     ->reactive()
-                                    ->required()
-                                    ->default(function () {
-                                        // Mode Testing: Hanya jika APP_DEBUG=true
-                                        if (config('app.debug')) {
-                                            return ProductVariant::where('stock', '>', 0)->first()?->id;
-                                        }
-                                        return null;
-                                    }),
+                                    ->required(),
 
-                                TextInput::make('price')
-                                    ->label('Harga Satuan'),
+
                                 TextInput::make('quantity')
                                     ->label('Jumlah')
                                     ->numeric()
                                     ->minValue(1)
                                     ->required()
-                                    ->default(config('app.debug') ? 1 : null) // Mode Testing
+
                                     ->rules([
                                         function (Get $get) {
                                             return function (string $attribute, mixed $value, Closure $fail) use ($get) {
@@ -110,24 +112,20 @@ class OrderForm
 
 
                             ])
-                            ->defaultItems(1)
+
                             ->columnSpanFull()
                             ->columns(2)
                             ->reorderable(false)
                             ->reactive()
-                            ->live(onBlur: true)
+
                             ->afterStateHydrated(fn(Get $get, Set $set) => OrderFormUtils::calculateTotalAmount($get, $set))
                             ->afterStateUpdated(fn(Get $get, Set $set) => OrderFormUtils::calculateTotalAmount($get, $set)),
 
-                        TextEntry::make('total_amount_display')
-                            ->label('Total')
-                            ->reactive()
-                            ->money('IDR')
-                            ->size(TextSize::Large)
-                            ->weight(FontWeight::Medium)
-                            ->copyable()
-                            ->copyMessage('Copied!')
-                            ->copyMessageDuration(1500),
+                        TextInput::make('total_amount_display')
+                            ->label('Total Harga Produk')
+                            ->disabled(),
+
+
                     ])
                     ->columnSpanFull(),
                 Section::make('Pengiriman')
@@ -182,7 +180,7 @@ class OrderForm
                                 }
                                 return $options;
                             })
-                            ->default('default')
+
                             ->reactive()
 
                             ->required(),
@@ -201,14 +199,10 @@ class OrderForm
                             ->afterStateHydrated(fn(Get $get, Set $set, $state) => OrderFormUtils::calculateShippingCost($get, $set, $state))
                             ->afterStateUpdated(fn(Get $get, Set $set, $state) => OrderFormUtils::calculateShippingCost($get, $set, $state)),
 
-                        TextEntry::make('shipping_cost')
+                        TextInput::make('shipping_cost_display')
                             ->label('Harga Pengiriman')
-                            ->money('IDR')
-                            ->size(TextSize::Large)
-                            ->weight(FontWeight::Medium)
-                            ->copyable()
-                            ->copyMessage('Copied!')
-                            ->copyMessageDuration(1500)
+
+                            ->disabled()
                         // ->reactive()
 
 
@@ -221,15 +215,10 @@ class OrderForm
                     ->description('Metode pembayaran')
                     ->columns(2)
                     ->schema([
-                        TextEntry::make('total_amount')
+                        TextInput::make('total_amount_pembayaran_display')
                             ->label('Total Harga')
                             ->reactive()
-                            ->money('IDR')
-                            ->size(TextSize::Large)
-                            ->weight(FontWeight::Medium)
-                            ->copyable()
-                            ->copyMessage('Copied!')
-                            ->copyMessageDuration(1500),
+                            ->disabled(),
 
 
                         Select::make('payment_method')
@@ -240,25 +229,19 @@ class OrderForm
                                 'cod'      => 'COD',
                             ])
                             ->required()
-                            ->default(config('app.debug') ? 'transfer' : null) // Mode Testing
+
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
 
 
                 Select::make('status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'paid' => 'Paid',
-                        'shipped' => 'Shipped',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
-                    ])
-                    ->default('pending')
+                    ->options(OrderStatus::class)
+
                     ->required(),
                 Select::make('payment_status')
-                    ->options(['pending' => 'Pending', 'paid' => 'Paid', 'failed' => 'Failed'])
-                    ->default('pending')
+                    ->options(OrderPaymentStatus::class)
+
                     ->required(),
             ]);
     }

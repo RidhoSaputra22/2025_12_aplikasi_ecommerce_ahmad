@@ -14,11 +14,17 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
+use UnitEnum;
+
 class ShipmentCourierResource extends Resource
 {
     protected static ?string $model = ShipmentCourier::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;
+    protected static null|UnitEnum|string $navigationGroup = 'Pengiriman';
+    protected static ?string $navigationLabel = 'Jasa Expedisi';
+    protected static ?string $pluralLabel = 'Jasa Expedisi';
+    protected static ?string $modelLabel = 'Jasa Expedisi';
 
     protected static ?string $recordTitleAttribute = 'name';
 

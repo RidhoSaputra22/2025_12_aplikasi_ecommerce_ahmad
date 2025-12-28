@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
+use App\Enums\UserStatus;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -23,10 +24,11 @@ class UserForm
                     ->tel(),
                 TextInput::make('password')
                     ->password()
+                    ->visibleOn('create')
                     ->required(),
                 DateTimePicker::make('email_verified_at'),
                 Select::make('status')
-                    ->options(['active' => 'Active', 'suspended' => 'Suspended'])
+                    ->options(UserStatus::class)
                     ->default('active')
                     ->required(),
                 DateTimePicker::make('last_login_at'),

@@ -21,9 +21,9 @@ class ShipmentResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;
     protected static null|UnitEnum|string $navigationGroup = 'Pengiriman';
-    protected static ?string $navigationLabel = 'Jasa Expedisi';
-    protected static ?string $pluralLabel = 'Jasa Expedisi';
-    protected static ?string $modelLabel = 'Jasa Expedisi';
+    protected static ?string $navigationLabel = 'Pengiriman';
+    protected static ?string $pluralLabel = 'Pengiriman';
+    protected static ?string $modelLabel = 'Pengiriman';
 
     protected static ?string $recordTitleAttribute = 'courier';
 

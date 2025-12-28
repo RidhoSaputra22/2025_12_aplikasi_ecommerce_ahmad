@@ -14,23 +14,30 @@ class ProductsTable
     {
         return $table
             ->columns([
-                TextColumn::make('vendor_id')
+                TextColumn::make('vendor.store_name')
+                    ->label('Vendor')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('category_id')
+                TextColumn::make('category.name')
+                    ->label('Kategori')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('name')
+                    ->label('Nama Produk')
                     ->searchable(),
                 TextColumn::make('slug')
+                    ->label('Slug')
                     ->searchable(),
                 TextColumn::make('price')
-                    ->money()
+                    ->label('Harga')
+                    ->money('IDR')
                     ->sortable(),
                 TextColumn::make('weight')
+                    ->label('Berat (gram)')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('status')
+                    ->label('Status')
                     ->badge(),
                 TextColumn::make('created_at')
                     ->dateTime()

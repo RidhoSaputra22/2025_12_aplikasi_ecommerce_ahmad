@@ -4,6 +4,7 @@ namespace App\Filament\Vendor\Resources\Orders;
 
 use BackedEnum;
 use App\Models\Order;
+use App\Models\Vendor;
 use Filament\Tables\Table;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
@@ -44,7 +45,12 @@ class OrderResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $userId = Auth::user()->id;
-        return parent::getEloquentQuery()->where('user_id', $userId);
+        return parent::getEloquentQuery()
+            ->whereHas('orderVendors', function (Builder $query) use ($userId) {
+                $query->whereHas('vendor', function (Builder $vendorQuery) use ($userId) {
+                    $vendorQuery->where('user_id', $userId);
+                });
+            });
     }
 
     public static function getPages(): array

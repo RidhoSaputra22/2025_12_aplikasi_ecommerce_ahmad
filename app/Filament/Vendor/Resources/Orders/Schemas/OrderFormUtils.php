@@ -22,15 +22,20 @@ class OrderFormUtils
                 $total += $variant->price * $item['quantity'];
             }
         }
-        // dd();
+
         $courierId = $get('shipment_courier_id');
-        $courier = ShipmentCourier::findOrFail($courierId);
-        $shippingCost = $courier->price;
+        $shippingCost = 0;
 
+        if ($courierId) {
+            $courier = ShipmentCourier::find($courierId);
+            $shippingCost = $courier ? $courier->price : 0;
+        }
 
-        $set('total_amount', $total);
+        $set('total_amount', $total + $shippingCost);
+        $set('total_amount_pembayaran_display', "Rp " . number_format((int)($total + $shippingCost), 2, ',', '.'));
         $set('shipping_cost', $shippingCost);
-        $set('total_amount_display', $total);
+        $set('shipping_cost_display', "Rp " . number_format((int)$shippingCost, 2, ',', '.'));
+        $set('total_amount_display', "Rp " . number_format((int)$total, 2, ',', '.'));
     }
 
     // calculate shipping cost based on courier and service
@@ -39,6 +44,7 @@ class OrderFormUtils
         $courier = ShipmentCourier::find($state);
         if ($courier) {
             $set('shipping_cost', $courier->price);
+            $set('shipping_cost_display', "Rp " . number_format((int)$courier->price, 2, ',', '.'));
 
             // Update total amount
             $items = $get('items') ?? [];
@@ -49,7 +55,8 @@ class OrderFormUtils
                     $total += $variant->price * $item['quantity'];
                 }
             }
-            $set('total_amount_display', $total);
+            $set('total_amount_display', "Rp " . number_format((int)$total, 2, ',', '.'));
+            $set('total_amount_pembayaran_display', "Rp " . number_format((int)($total + $courier->price), 2, ',', '.'));
             $set('total_amount', $total += $courier->price);
         }
     }

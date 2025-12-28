@@ -26,6 +26,7 @@ class VendorPanelProvider extends PanelProvider
         return $panel
             ->id('vendor')
             ->path('vendor')
+            ->viteTheme('resources/css/filament/vendor/theme.css')
             ->login()
             ->colors([
                 'primary' => Color::Amber,

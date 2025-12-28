@@ -20,6 +20,12 @@ class Category extends Model
                 $category->slug = Str::slug($category->name);
             }
         });
+
+        static::updating(function ($category) {
+            if ($category->isDirty('name')) {
+                $category->slug = Str::slug($category->name);
+            }
+        });
     }
 
     public function parent()

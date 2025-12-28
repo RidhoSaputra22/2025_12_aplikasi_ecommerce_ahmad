@@ -12,15 +12,19 @@ class ShipmentCourierForm
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label('Nama')
                     ->required(),
                 TextInput::make('code')
+                    ->label('Kode')
                     ->required(),
                 TextInput::make('service')
+                    ->label('Layanan')
                     ->required(),
                 TextInput::make('price')
+                    ->label('Harga')
                     ->required()
                     ->numeric()
-                    ->prefix('$'),
+                    ->prefix('Rp. '),
             ]);
     }
 }

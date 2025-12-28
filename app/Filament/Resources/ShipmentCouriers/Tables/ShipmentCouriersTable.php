@@ -15,13 +15,17 @@ class ShipmentCouriersTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label('Nama')
                     ->searchable(),
                 TextColumn::make('code')
+                    ->label('Kode')
                     ->searchable(),
                 TextColumn::make('service')
+                    ->label('Layanan')
                     ->searchable(),
                 TextColumn::make('price')
-                    ->money()
+                    ->label('Harga')
+                    ->money('IDR')
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->dateTime()

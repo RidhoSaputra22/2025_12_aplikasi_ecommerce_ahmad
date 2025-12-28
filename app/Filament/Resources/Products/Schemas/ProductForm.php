@@ -13,27 +13,34 @@ class ProductForm
     {
         return $schema
             ->components([
-                TextInput::make('vendor_id')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('category_id')
-                    ->required()
-                    ->numeric(),
+                Select::make('vendor_id')
+                    ->label('Vendor')
+                    ->relationship('vendor', 'store_name')
+                    ->required(),
+                Select::make('category_id')
+                    ->label('Kategori')
+                    ->relationship('category', 'name')
+                    ->required(),
                 TextInput::make('name')
+                    ->label("Nama Produk")
                     ->required(),
-                TextInput::make('slug')
-                    ->required(),
+
                 Textarea::make('description')
+                    ->label("Deskripsi Produk")
                     ->columnSpanFull(),
                 TextInput::make('price')
+                    ->label("Harga Produk")
                     ->required()
                     ->numeric()
-                    ->prefix('$'),
+                    ->prefix('Rp'),
                 TextInput::make('weight')
+                    ->label("Berat Produk")
                     ->required()
                     ->numeric()
+                    ->suffix('gram')
                     ->default(0),
                 Select::make('status')
+                    ->label("Status Produk")
                     ->options(['draft' => 'Draft', 'active' => 'Active', 'archived' => 'Archived'])
                     ->default('draft')
                     ->required(),

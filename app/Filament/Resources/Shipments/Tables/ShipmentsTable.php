@@ -14,17 +14,18 @@ class ShipmentsTable
     {
         return $table
             ->columns([
-                TextColumn::make('order_vendor_id')
+                TextColumn::make('orderVendor.vendor.store_name')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('courier')
+                TextColumn::make('shipmentCourier.name')
                     ->searchable(),
-                TextColumn::make('service')
+                TextColumn::make('shipmentCourier.service')
                     ->searchable(),
                 TextColumn::make('tracking_number')
+                    ->default('N/A')
                     ->searchable(),
                 TextColumn::make('shipping_cost')
-                    ->money()
+                    ->money('IDR')
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge(),

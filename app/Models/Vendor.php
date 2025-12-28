@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Enums\VendorStatus;
+use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Model;
 
 class Vendor extends Model
 {
@@ -22,6 +23,15 @@ class Vendor extends Model
     protected $casts = [
         'status' => VendorStatus::class,
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($vendor) {
+            if (empty($vendor->slug)) {
+                $vendor->slug = Str::slug($vendor->store_name);
+            }
+        });
+    }
 
     public function user()
     {

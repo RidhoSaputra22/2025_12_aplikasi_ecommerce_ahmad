@@ -15,9 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_vendor_id')->constrained()->cascadeOnDelete();
             $table->foreignId('shipment_address_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('shipment_courier_id')->nullable()->constrained('shipment_couriers')->nullOnDelete();
 
-            $table->string('courier');
-            $table->string('service');
+
+
+
             $table->string('tracking_number')->nullable();
             $table->decimal('shipping_cost', 15, 2);
             $table->enum('status', ['pending', 'shipped', 'delivered'])->default('pending');

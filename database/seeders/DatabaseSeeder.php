@@ -18,6 +18,7 @@ use App\Models\VendorWallet;
 use App\Models\VendorAddress;
 use App\Models\ProductVariant;
 use App\Models\ShipmentAddress;
+use App\Models\ShipmentCourier;
 use Illuminate\Database\Seeder;
 use App\Models\VendorBankAccount;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -146,10 +147,16 @@ class DatabaseSeeder extends Seeder
             ['user_id' => 3, 'province' => 'Jawa Timur', 'city' => 'Surabaya', 'district' => 'Wonokromo', 'postal_code' => '60243', 'address' => 'Jl. Pelanggan 3'],
         ]);
 
+        ShipmentCourier::insert([
+            ['name' => 'JNE', 'code' => 'jne', 'service' => 'REG', 'price' => 20000],
+            ['name' => 'J&T', 'code' => 'jnt', 'service' => 'EZ', 'price' => 15000],
+            ['name' => 'SiCepat', 'code' => 'sicepat', 'service' => 'BEST', 'price' => 18000],
+        ]);
+
         Shipment::insert([
-            ['order_vendor_id' => 1, 'shipment_address_id' => 1, 'courier' => 'JNE', 'service' => 'REG', 'shipping_cost' => 20000],
-            ['order_vendor_id' => 2, 'shipment_address_id' => 2, 'courier' => 'J&T', 'service' => 'EZ', 'shipping_cost' => 15000],
-            ['order_vendor_id' => 3, 'shipment_address_id' => 3, 'courier' => 'SiCepat', 'service' => 'BEST', 'shipping_cost' => 18000],
+            ['order_vendor_id' => 1, 'shipment_address_id' => 1, 'shipment_courier_id' => 1, 'shipping_cost' => 20000],
+            ['order_vendor_id' => 2, 'shipment_address_id' => 2, 'shipment_courier_id' => 2, 'shipping_cost' => 15000],
+            ['order_vendor_id' => 3, 'shipment_address_id' => 3, 'shipment_courier_id' => 3, 'shipping_cost' => 18000],
         ]);
 
 

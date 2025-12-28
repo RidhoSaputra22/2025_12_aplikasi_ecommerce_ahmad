@@ -11,16 +11,22 @@ use Filament\Actions\Action;
 use Filament\Schemas\Schema;
 use App\Models\ProductVariant;
 use App\Models\ShipmentAddress;
+use App\Models\ShipmentCourier;
 use Filament\Forms\Components\Radio;
+use Filament\Support\Enums\TextSize;
 use Filament\Support\Icons\Heroicon;
 use Filament\Forms\Components\Select;
+use Filament\Support\Enums\FontWeight;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use App\Filament\Forms\Components\CardRadio;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use App\Filament\Resources\Users\Tables\UsersTable;
 use Filament\Forms\Components\Repeater\TableColumn;
+use App\Filament\Resources\Orders\Schemas\OrderFormUtils;
 
 class OrderForm
 {
@@ -34,16 +40,17 @@ class OrderForm
                     ->description('Tambahkan produk ke dalam order')
                     ->schema([
 
-                        Repeater::make('orderItems')
+                        Repeater::make('items')
                             ->label('Produk dipesan')
-
-
                             ->required()
                             ->table([
                                 TableColumn::make('Produk'),
                                 TableColumn::make('Jumlah'),
+                                TableColumn::make('Harga Satuan'),
+
                             ])
                             ->schema([
+
 
                                 Select::make('product_variant_id')
                                     ->label('Produk')
@@ -80,6 +87,8 @@ class OrderForm
                                         return null;
                                     }),
 
+                                TextInput::make('price')
+                                    ->label('Harga Satuan'),
                                 TextInput::make('quantity')
                                     ->label('Jumlah')
                                     ->numeric()
@@ -98,11 +107,27 @@ class OrderForm
                                         }
                                     ]),
 
+
+
                             ])
                             ->defaultItems(1)
                             ->columnSpanFull()
                             ->columns(2)
-                            ->reorderable(false),
+                            ->reorderable(false)
+                            ->reactive()
+                            ->live(onBlur: true)
+                            ->afterStateHydrated(fn(Get $get, Set $set) => OrderFormUtils::calculateTotalAmount($get, $set))
+                            ->afterStateUpdated(fn(Get $get, Set $set) => OrderFormUtils::calculateTotalAmount($get, $set)),
+
+                        TextEntry::make('total_amount_display')
+                            ->label('Total')
+                            ->reactive()
+                            ->money('IDR')
+                            ->size(TextSize::Large)
+                            ->weight(FontWeight::Medium)
+                            ->copyable()
+                            ->copyMessage('Copied!')
+                            ->copyMessageDuration(1500),
                     ])
                     ->columnSpanFull(),
                 Section::make('Pengiriman')
@@ -118,73 +143,9 @@ class OrderForm
                                     ->pluck('name', 'user_id');
                             })
                             ->createOptionModalHeading('Buat Customer Baru')
-                            ->createOptionForm([
-                                Section::make('Detail Customer')
-                                    ->label('Detail Customer')
-                                    ->description('Informasi detail customer yang melakukan order')
-                                    ->schema([
-                                        TextInput::make('name')
-                                            ->required(),
-                                        TextInput::make('email')
-                                            ->label('Email address')
-                                            ->email()
-                                            ->required(),
-                                        TextInput::make('phone')
-                                            ->tel(),
-                                        TextInput::make('password')
-                                            ->required(),
-                                    ])
-                                    ->columns(2),
-
-                                Section::make('Alamat Pengiriman')
-                                    ->label('Alamat Pengiriman')
-                                    ->description('Informasil Alamat Pengiriman')
-                                    ->schema([
-                                        TextInput::make('province')
-                                            ->label('Provinsi')
-                                            ->required(),
-                                        TextInput::make('city')
-                                            ->label('Kota/Kabupaten')
-                                            ->required(),
-                                        TextInput::make('district')
-                                            ->label('Kecamatan')
-                                            ->required(),
-                                        TextInput::make('postal_code')
-                                            ->label('Kode Pos')
-                                            ->required(),
-                                        TextInput::make('address')
-                                            ->label('Alamat Lengkap')
-                                            ->required(),
-                                    ])
-
-                                    ->columns(3),
-
-                            ])
+                            ->createOptionForm(OrderFormUtils::customerSchema())
                             ->columns(3)
-                            ->createOptionUsing(function (array $data): int {
-                                $user = User::create([
-                                    'name' => $data['name'],
-                                    'email' => $data['email'],
-                                    'phone' => $data['phone'],
-                                    'password' => bcrypt($data['password']),
-                                ]);
-
-                                UserRole::create([
-                                    'user_id' => $user->id,
-                                    'role_id' => Role::where('name', 'customer')->first()->id,
-                                ]);
-
-                                ShipmentAddress::create([
-                                    'user_id' => $user->id,
-                                    'province' => $data['province'],
-                                    'city' => $data['city'],
-                                    'district' => $data['district'],
-                                    'postal_code' => $data['postal_code'],
-                                    'address' => $data['address'],
-                                ]);
-
-                                return $user->id;
-                            })
+                            ->createOptionUsing(fn(array $data) => OrderFormUtils::createCustomerData($data))
                             ->searchable()
                             ->required()
 
@@ -226,43 +187,50 @@ class OrderForm
 
                             ->required(),
 
+                        Select::make('shipment_courier_id')
+                            ->label('Kurir Pengiriman')
+                            ->options(function () {
+                                return ShipmentCourier::all()
+                                    ->mapWithKeys(fn($c) => [
+                                        $c->id => $c->name . ' - ' . $c->service . ' (Rp ' . number_format($c->price, 2, ',', '.') . ')'
+                                    ]);
+                            })
+                            ->required()
+                            ->reactive()
+                            ->live()
+                            ->afterStateHydrated(fn(Get $get, Set $set, $state) => OrderFormUtils::calculateShippingCost($get, $set, $state))
+                            ->afterStateUpdated(fn(Get $get, Set $set, $state) => OrderFormUtils::calculateShippingCost($get, $set, $state)),
+
+                        TextEntry::make('shipping_cost')
+                            ->label('Harga Pengiriman')
+                            ->money('IDR')
+                            ->size(TextSize::Large)
+                            ->weight(FontWeight::Medium)
+                            ->copyable()
+                            ->copyMessage('Copied!')
+                            ->copyMessageDuration(1500)
+                        // ->reactive()
+
+
+
+
+
                     ])
                     ->columnSpanFull(),
                 Section::make('Pembayaran')
                     ->description('Metode pembayaran')
                     ->columns(2)
                     ->schema([
+                        TextEntry::make('total_amount')
+                            ->label('Total Harga')
+                            ->reactive()
+                            ->money('IDR')
+                            ->size(TextSize::Large)
+                            ->weight(FontWeight::Medium)
+                            ->copyable()
+                            ->copyMessage('Copied!')
+                            ->copyMessageDuration(1500),
 
-                        Select::make('courier')
-
-                            ->label('Kurir Pengiriman')
-                            ->options([
-                                'JNE' => 'JNE',
-                                'J&T' => 'J&T Express',
-                                'SiCepat' => 'SiCepat',
-                                'AnterAja' => 'AnterAja',
-                                'Ninja' => 'Ninja Xpress',
-                            ])
-                            ->required()
-                            ->default(config('app.debug') ? 'JNE' : null), // Mode Testing
-
-                        Select::make('service')
-                            ->label('Layanan')
-                            ->options([
-                                'REG' => 'Regular',
-                                'YES' => 'Yakin Esok Sampai',
-                                'OKE' => 'Ongkos Kirim Ekonomis',
-                            ])
-                            ->required()
-                            ->default(config('app.debug') ? 'REG' : null), // Mode Testing
-
-                        TextInput::make('shipping_cost')
-                            ->label('Biaya Pengiriman')
-                            ->numeric()
-                            ->prefix('Rp ')
-                            ->default(10000)
-                            ->required()
-                            ->columnSpanFull(),
 
                         Select::make('payment_method')
                             ->label('Metode Pembayaran')

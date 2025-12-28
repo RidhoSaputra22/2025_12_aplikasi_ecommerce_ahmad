@@ -9,9 +9,8 @@ class Shipment extends Model
 {
     protected $fillable = [
         'order_vendor_id',
-
-        'courier',
-        'service',
+        'shipment_address_id',
+        'shipment_courier_id',
         'tracking_number',
         'shipping_cost',
         'status',

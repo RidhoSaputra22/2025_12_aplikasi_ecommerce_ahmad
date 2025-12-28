@@ -10,7 +10,6 @@ class ShipmentAddress extends Model
 
     protected $fillable = [
         'user_id',
-        'shipment_id',
         'province',
         'city',
         'district',

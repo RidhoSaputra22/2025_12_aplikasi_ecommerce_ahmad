@@ -1,6 +1,3 @@
-{{-- {{dd($getState() )}} --}}
-
-
 <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
     <div x-data="{ state: $wire.$entangle(@js($getStatePath())) }" class="space-y-3">
 

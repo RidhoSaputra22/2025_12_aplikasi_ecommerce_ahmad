@@ -404,7 +404,7 @@ class ListOrders extends ListRecords
                             }
 
                             // Buat shipment
-                            $shipment = Shipment::create([
+                            Shipment::create([
                                 'order_vendor_id' => $orderVendor->id,
                                 'shipment_address_id' => $data['shipping_address_id'],
                                 'courier' => $data['courier'],
@@ -412,10 +412,6 @@ class ListOrders extends ListRecords
                                 'shipping_cost' => $data['shipping_cost'],
                                 'status' => ShipmentStatus::Pending
                             ]);
-
-                            // Buat shipment address jika diperlukan
-                            // (Asumsikan alamat sudah ada, jadi tidak dibuat ulang di sini)
-                            ShipmentAddress::find($data['shipping_address_id']);
                         }
 
                         // Buat payment record

@@ -5,7 +5,11 @@
 
 {{-- Content --}}
 @include('components.product.banner')
-@include('components.product.content')
+@include('components.product.content', [
+'products' => $products,
+'categories' => $categories,
+'request' => $request,
+])
 
 {{-- @include('components.home.faq') --}}
 

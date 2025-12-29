@@ -38,57 +38,60 @@ class DatabaseSeeder extends Seeder
     {
         // Factory validation: buat 1 record per model (ringan), dengan relasi terhubung.
 
-        $user = User::factory()->create();
-        $role = Role::factory()->create();
-        UserRole::factory()->create([
-            'user_id' => $user->id,
-            'role_id' => $role->id,
+        Role::insert([
+            ['name' => 'admin'],
+            ['name' => 'vendor'],
+            ['name' => 'user'],
         ]);
 
-        $vendor = Vendor::factory()->create(['user_id' => $user->id]);
-        VendorAddress::factory()->create(['vendor_id' => $vendor->id]);
-        VendorBankAccount::factory()->create(['vendor_id' => $vendor->id]);
+        User::insert([
+            [
+                'name' => 'Admin',
+                'email' => 'admin@example.com',
+                'password' => bcrypt('admin'),
+            ],
 
-        $vendorWallet = VendorWallet::factory()->create(['vendor_id' => $vendor->id]);
-        VendorWalletTransaction::factory()->create(['vendor_wallet_id' => $vendorWallet->id]);
+            [
+                'name' => 'Vendor',
+                'email' => 'vendor@gmail.com',
+                'password' => bcrypt('vendor'),
+            ],
 
-        $category = Category::factory()->create();
-        $product = Product::factory()->create([
-            'vendor_id' => $vendor->id,
-            'category_id' => $category->id,
-        ]);
-        ProductImage::factory()->create(['product_id' => $product->id]);
-        $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+            [
+                'name' => 'Customer',
+                'email' => 'customer@example.com',
+                'password' => bcrypt('customer'),
+            ]
 
-        $cart = Cart::factory()->create(['user_id' => $user->id]);
-        CartItem::factory()->create([
-            'cart_id' => $cart->id,
-            'product_variant_id' => $variant->id,
-        ]);
-
-        $order = Order::factory()->create(['user_id' => $user->id]);
-        $orderVendor = OrderVendor::factory()->create([
-            'order_id' => $order->id,
-            'vendor_id' => $vendor->id,
-        ]);
-        $orderItem = OrderItem::factory()->create([
-            'order_vendor_id' => $orderVendor->id,
-            'product_variant_id' => $variant->id,
-        ]);
-        Payment::factory()->create(['order_id' => $order->id]);
-
-        $courier = ShipmentCourier::factory()->create();
-        $shipmentAddress = ShipmentAddress::factory()->create(['user_id' => $user->id]);
-        Shipment::factory()->create([
-            'order_vendor_id' => $orderVendor->id,
-            'shipment_address_id' => $shipmentAddress->id,
-            'shipment_courier_id' => $courier->id,
         ]);
 
-        Review::factory()->create([
-            'user_id' => $user->id,
-            'product_id' => $product->id,
-            'order_item_id' => $orderItem->id,
+        UserRole::insert([
+            [
+                'user_id' => 1,
+                'role_id' => 1,
+            ],
+            [
+                'user_id' => 2,
+                'role_id' => 2,
+            ],
+            [
+                'user_id' => 3,
+                'role_id' => 3,
+            ]
         ]);
+
+        Product::factory()
+            ->count(10)
+            ->has(ProductImage::factory()
+                ->count(1))
+            ->has(ProductVariant::factory()->count(2))
+            ->create();
+
+        Category::factory()
+            ->count(5)
+            ->has(Product::factory()->count(2))
+
+            ->create()
+        ;
     }
 }

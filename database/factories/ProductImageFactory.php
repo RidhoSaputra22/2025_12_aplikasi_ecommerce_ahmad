@@ -19,7 +19,7 @@ class ProductImageFactory extends Factory
     {
         return [
             'product_id' => Product::factory(),
-            'image' => 'products/product_placeholder.jpg',
+            'image' => 'products/aksesoris-1.jpg',
             'is_primary' => fake()->boolean(20),
         ];
     }

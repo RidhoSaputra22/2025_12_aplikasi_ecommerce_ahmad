@@ -18,6 +18,11 @@
     <!-- Alpine Core -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- Livewire -->
+    @livewireStyles
+
+    <title>E-Commerce Desa</title>
+
 </head>
 
 <body>
@@ -28,6 +33,9 @@
 
     {{-- AOS --}}
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+    <!-- Livewire -->
+    @livewireScripts
 
     @stack('scripts')
     <script>

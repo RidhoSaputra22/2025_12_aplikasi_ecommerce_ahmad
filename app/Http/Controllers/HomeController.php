@@ -26,10 +26,6 @@ class HomeController extends Controller
         return view('etalase');
     }
 
-    public function produk()
-    {
-        return view('produk');
-    }
 
     public function tentang()
     {

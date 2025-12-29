@@ -4,20 +4,25 @@
             <h1 class="text-2xl/tight font-semibold">Toko Desa</h1>
             <p class="text-lg font-light">Melayani Sejak 2010</p>
         </div>
-        <form action="" class="mt-30 space-y-6 max-w-xl mx-auto" wire:submit.prevent="login">
+        <form action="" class="mt-30 space-y-6 max-w-xl mx-auto" wire:submit.prevent="regist">
 
             <div class="">
-                <h1 class="text-5xl/loose">Login</h1>
-                <p class="text-lg font-light">Silakan masukkan email dan kata sandi Anda untuk masuk.</p>
+                <h1 class="text-5xl/loose">Register</h1>
+                <p class="text-lg font-light">Silakan masukkan email dan kata sandi Anda untuk mendaftar.</p>
             </div>
 
-            <div>
-                @if (session()->has('error'))
-                <div class="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 mb-6">
-                    {{ session('error') }}
-                </div>
-                @endif
-            </div>
+            @component('components.form.input', [
+            'label' => 'Nama Lengkap',
+            'type' => 'text',
+            'wireModel' => 'nama',
+            'placeholder' => 'Masukkan nama lengkap Anda',
+            'required' => true,
+
+            ])
+            @endcomponent
+
+
+
             @component('components.form.input', [
             'label' => 'Email',
             'type' => 'email',
@@ -25,7 +30,6 @@
             'placeholder' => 'Masukkan email Anda',
             'required' => true,
             ])
-
             @endcomponent
 
             @component('components.form.input', [
@@ -40,14 +44,16 @@
             @component('components.form.button', [
             'label' => 'Masuk',
             'class' => 'w-full bg-primary text-white',
-            'wireLoadingTarget' => 'login',
+            'wireLoadingTarget' => 'regist',
             'wireLoadingClass' => 'opacity-70 cursor-not-allowed',
+
+
             ])
 
             @endcomponent
             <div>
-                <p class=" mt-6">Belum punya akun?
-                    <a href="{{ route('user.register') }}" class="text-primary font-semibold hover:underline">Daftar
+                <p class=" mt-6">Sudah punya akun?
+                    <a href="{{ route('user.login') }}" class="text-primary font-semibold hover:underline">Masuk
                         sekarang</a>
                 </p>
             </div>

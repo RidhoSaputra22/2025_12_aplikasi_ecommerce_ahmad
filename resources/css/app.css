@@ -28,22 +28,41 @@
 
 .input-form {
     label {
-        @apply font-light;
+        @apply font-light pb-2  block;
     }
     input {
-        @apply w-full px-3 py-2  border border-primary bg-white  focus:shadow-md focus:outline-none;
+        @apply w-full px-3 py-2  rounded-sm bg-white border border-gray-300;
     }
 
     select {
-        @apply w-full px-3 py-2  border border-primary bg-white  focus:shadow-md focus:outline-none;
+        @apply w-full px-3 py-2 rounded-sm bg-white border border-gray-300;
+
+        /* hilangkan arrow bawaan */
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+
+        /* kasih ruang untuk arrow custom */
+        padding-right: 2.5rem;
+
+        /* arrow custom + posisinya (biar nggak mepet) */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M6 8l4 4 4-4' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center; /* atur jarak dari kanan di sini */
+        background-size: 1rem 1rem;
+    }
+
+    /* IE/old Edge */
+    select::-ms-expand {
+        display: none;
     }
 
     textarea {
-        @apply w-full px-3 py-2  border border-primary bg-white  focus:shadow-md focus:outline-none resize-none;
+        @apply w-full px-3 py-2  rounded-sm bg-white outline-offset-1;
     }
 
     button {
-        @apply px-6 py-2  rounded-md cursor-pointer;
+        @apply px-6 py-4  rounded-md cursor-pointer;
     }
 }
 

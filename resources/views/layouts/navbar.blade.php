@@ -1,20 +1,45 @@
-<nav class="h-14 w-full mx-auto bg-white flex items-center px-10 shadow-md text-md fixed top-0 z-50 gap-8">
-    <div class="flex-1">
-        <a href="/">Ahmad Store</a>
-    </div>
-    <div class="flex gap-10">
-        <a href="/etalase" class=" hover:text-green-800 transition-colors">Kategori</a>
-        <a href="/produk" class=" hover:text-green-800 transition-colors">Produk</a>
-        {{-- <a href="/tentang" class=" hover:text-green-800 transition-colors">Tentang Kami</a> --}}
+@php
+$navActive = function (string|array $patterns, string $active = 'text-primary ', string $inactive =
+'hover:text-primary') {
+return request()->routeIs($patterns) ? $active : $inactive;
+};
 
+$isActive = function (string|array $patterns): bool {
+return request()->routeIs($patterns);
+};
+@endphp
+
+<div class="h-20 flex justify-between py-5 px-12 ">
+    <div class="flex gap-15">
+        <div class="flex items-center gap-2">
+            <!-- <img src="{{ asset('images/logo.jpg') }}" alt="" class="w-14 aspect-square"> -->
+            <div class="">
+                <h1 class="text-xl font-semibold ">Toko Desa</h1>
+                <h1 class="text-sm/tight font-light">Melayani sejak 2010</h1>
+            </div>
+        </div>
+        <ul class="flex gap-10 items-center">
+            <li>
+                <a href="{{ route('welcome') }}" class=" hover:text-primary {{ $navActive('welcome') }}">Beranda</a>
+            </li>
+            <li>
+                <a href="{{ route('produk') }}" class=" hover:text-primary {{ $navActive('produk*') }}">Cari
+                    Produk</a>
+            </li>
+            <li>
+                <a href="{{ route('tentang') }}" class=" hover:text-primary {{ $navActive('tentang') }}">Tentang
+                    Kami</a>
+            </li>
+        </ul>
     </div>
-    <div>
-        <a href="/keranjang" class=" hover:text-green-800 transition-colors flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                class="bi bi-cart2" viewBox="0 0 16 16">
-                <path
-                    d="M0 2.5A.5.5 0 0 1 .5 2H2a.5.5 0 0 1 .485.379L2.89 4H14.5a.5.5 0 0 1 .485.621l-1.5 6A.5.5 0 0 1 13 11H4a.5.5 0 0 1-.485-.379L1.61 3H.5a.5.5 0 0 1-.5-.5M3.14 5l1.25 5h8.22l1.25-5zM5 13a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0m9-1a1 1 0 1 0 0 2 1 1 0 0 0 0-2m-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0" />
-            </svg>
-        </a>
+    <div class="flex">
+        <ul class="flex gap-5 items-center">
+            <li>
+                <a href="{{ route('user.login') }}" class="hover:text-primary">Masuk</a>
+            </li>
+            <li>
+                <a href="{{ route('user.register') }}" class="hover:text-primary">Daftar</a>
+            </li>
+        </ul>
     </div>
-</nav>
+</div>

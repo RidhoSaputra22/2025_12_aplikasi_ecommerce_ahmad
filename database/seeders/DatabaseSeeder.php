@@ -2,26 +2,30 @@
 
 namespace Database\Seeders;
 
-use App\Models\Role;
-use App\Models\User;
-use App\Models\Order;
-use App\Models\Review;
-use App\Models\Vendor;
-use App\Models\Payment;
-use App\Models\Product;
+use Illuminate\Database\Seeder;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\Category;
-use App\Models\Shipment;
-use App\Models\UserRole;
+use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderVendor;
-use App\Models\VendorWallet;
-use App\Models\VendorAddress;
+use App\Models\Payment;
+use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\ProductVariant;
+use App\Models\Review;
+use App\Models\Role;
+use App\Models\Shipment;
 use App\Models\ShipmentAddress;
 use App\Models\ShipmentCourier;
-use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\UserRole;
+use App\Models\Vendor;
+use App\Models\VendorAddress;
 use App\Models\VendorBankAccount;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\VendorWallet;
+use App\Models\VendorWalletTransaction;
 
 class DatabaseSeeder extends Seeder
 {
@@ -32,144 +36,59 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-        User::insert([
-            [
-                'name' => 'Admin',
-                'email' => 'admin@gmail.com',
-                'password' => bcrypt('admin'),
-                'status' => 'active'
-            ],
-            [
-                'name' => 'Vendor One',
-                'email' => 'vendor@gmail.com',
-                'password' => bcrypt('vendor'),
-                'status' => 'active'
-            ],
-            [
-                'name' => 'Customer One',
-                'email' => 'customer@gmail.com',
-                'password' => bcrypt('customer'),
-                'status' => 'active'
-            ],
+        // Factory validation: buat 1 record per model (ringan), dengan relasi terhubung.
+
+        $user = User::factory()->create();
+        $role = Role::factory()->create();
+        UserRole::factory()->create([
+            'user_id' => $user->id,
+            'role_id' => $role->id,
         ]);
 
-        Role::insert([
-            ['name' => 'Admin'],
-            ['name' => 'Vendor'],
-            ['name' => 'Customer'],
+        $vendor = Vendor::factory()->create(['user_id' => $user->id]);
+        VendorAddress::factory()->create(['vendor_id' => $vendor->id]);
+        VendorBankAccount::factory()->create(['vendor_id' => $vendor->id]);
+
+        $vendorWallet = VendorWallet::factory()->create(['vendor_id' => $vendor->id]);
+        VendorWalletTransaction::factory()->create(['vendor_wallet_id' => $vendorWallet->id]);
+
+        $category = Category::factory()->create();
+        $product = Product::factory()->create([
+            'vendor_id' => $vendor->id,
+            'category_id' => $category->id,
+        ]);
+        ProductImage::factory()->create(['product_id' => $product->id]);
+        $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+
+        $cart = Cart::factory()->create(['user_id' => $user->id]);
+        CartItem::factory()->create([
+            'cart_id' => $cart->id,
+            'product_variant_id' => $variant->id,
         ]);
 
-        UserRole::insert([
-            ['user_id' => 1, 'role_id' => 1],
-            ['user_id' => 2, 'role_id' => 2],
-            ['user_id' => 3, 'role_id' => 3],
+        $order = Order::factory()->create(['user_id' => $user->id]);
+        $orderVendor = OrderVendor::factory()->create([
+            'order_id' => $order->id,
+            'vendor_id' => $vendor->id,
+        ]);
+        $orderItem = OrderItem::factory()->create([
+            'order_vendor_id' => $orderVendor->id,
+            'product_variant_id' => $variant->id,
+        ]);
+        Payment::factory()->create(['order_id' => $order->id]);
+
+        $courier = ShipmentCourier::factory()->create();
+        $shipmentAddress = ShipmentAddress::factory()->create(['user_id' => $user->id]);
+        Shipment::factory()->create([
+            'order_vendor_id' => $orderVendor->id,
+            'shipment_address_id' => $shipmentAddress->id,
+            'shipment_courier_id' => $courier->id,
         ]);
 
-        Vendor::insert([
-            [
-                'user_id' => 2,
-                'store_name' => 'Toko Elektronik',
-                'slug' => 'toko-elektronik',
-                'status' => 'active'
-            ],
-            [
-                'user_id' => 2,
-                'store_name' => 'Toko Fashion',
-                'slug' => 'toko-fashion',
-                'status' => 'active'
-            ],
-            [
-                'user_id' => 2,
-                'store_name' => 'Toko Buku',
-                'slug' => 'toko-buku',
-                'status' => 'active'
-            ],
-        ]);
-
-        VendorAddress::insert([
-            ['vendor_id' => 1, 'province' => 'Jawa Barat', 'city' => 'Bandung', 'district' => 'Cicendo', 'postal_code' => '40173', 'address' => 'Jl. A'],
-            ['vendor_id' => 2, 'province' => 'DKI Jakarta', 'city' => 'Jakarta', 'district' => 'Setiabudi', 'postal_code' => '12910', 'address' => 'Jl. B'],
-            ['vendor_id' => 3, 'province' => 'Jawa Timur', 'city' => 'Surabaya', 'district' => 'Wonokromo', 'postal_code' => '60243', 'address' => 'Jl. C'],
-        ]);
-
-        VendorBankAccount::insert([
-            ['vendor_id' => 1, 'bank_name' => 'BCA', 'account_number' => '123456', 'account_holder' => 'Vendor A'],
-            ['vendor_id' => 2, 'bank_name' => 'BRI', 'account_number' => '234567', 'account_holder' => 'Vendor B'],
-            ['vendor_id' => 3, 'bank_name' => 'BNI', 'account_number' => '345678', 'account_holder' => 'Vendor C'],
-        ]);
-
-        Category::insert([
-            ['name' => 'Elektronik', 'slug' => 'elektronik'],
-            ['name' => 'Fashion', 'slug' => 'fashion'],
-            ['name' => 'Buku', 'slug' => 'buku'],
-        ]);
-
-        Product::insert([
-            ['vendor_id' => 1, 'category_id' => 1, 'name' => 'Laptop', 'slug' => 'laptop', 'price' => 10000000],
-            ['vendor_id' => 2, 'category_id' => 2, 'name' => 'Kaos', 'slug' => 'kaos', 'price' => 100000],
-            ['vendor_id' => 3, 'category_id' => 3, 'name' => 'Novel', 'slug' => 'novel', 'price' => 80000],
-        ]);
-
-        ProductVariant::insert([
-            ['product_id' => 1, 'sku' => 'LAP-01', 'variant_name' => 'Default', 'price' => 10000000, 'stock' => 10],
-            ['product_id' => 2, 'sku' => 'KAO-01', 'variant_name' => 'L', 'price' => 100000, 'stock' => 20],
-            ['product_id' => 3, 'sku' => 'BUK-01', 'variant_name' => 'Softcover', 'price' => 80000, 'stock' => 15],
-        ]);
-
-        Order::insert([
-            ['user_id' => 3, 'order_number' => 'ORD001', 'total_amount' => 10000000],
-            ['user_id' => 3, 'order_number' => 'ORD002', 'total_amount' => 100000],
-            ['user_id' => 3, 'order_number' => 'ORD003', 'total_amount' => 80000],
-        ]);
-
-        Payment::insert([
-            ['order_id' => 1, 'payment_method' => 'transfer', 'amount' => 10000000, 'status' => 'success'],
-            ['order_id' => 2, 'payment_method' => 'ewallet', 'amount' => 100000, 'status' => 'success'],
-            ['order_id' => 3, 'payment_method' => 'cod', 'amount' => 80000, 'status' => 'pending'],
-        ]);
-
-        VendorWallet::insert([
-            ['vendor_id' => 1, 'balance' => 5000000],
-            ['vendor_id' => 2, 'balance' => 2000000],
-            ['vendor_id' => 3, 'balance' => 1000000],
-        ]);
-
-        OrderVendor::insert([
-            ['order_id' => 1, 'vendor_id' => 1, 'subtotal' => 10000000],
-            ['order_id' => 2, 'vendor_id' => 2, 'subtotal' => 100000],
-            ['order_id' => 3, 'vendor_id' => 3, 'subtotal' => 80000],
-        ]);
-
-        ShipmentAddress::insert([
-            ['user_id' => 3, 'province' => 'Jawa Barat', 'city' => 'Bandung', 'district' => 'Cicendo', 'postal_code' => '40173', 'address' => 'Jl. Pelanggan 1'],
-            ['user_id' => 3, 'province' => 'DKI Jakarta', 'city' => 'Jakarta', 'district' => 'Setiabudi', 'postal_code' => '12910', 'address' => 'Jl. Pelanggan 2'],
-            ['user_id' => 3, 'province' => 'Jawa Timur', 'city' => 'Surabaya', 'district' => 'Wonokromo', 'postal_code' => '60243', 'address' => 'Jl. Pelanggan 3'],
-        ]);
-
-        ShipmentCourier::insert([
-            ['name' => 'JNE', 'code' => 'jne', 'service' => 'REG', 'price' => 20000],
-            ['name' => 'J&T', 'code' => 'jnt', 'service' => 'EZ', 'price' => 15000],
-            ['name' => 'SiCepat', 'code' => 'sicepat', 'service' => 'BEST', 'price' => 18000],
-        ]);
-
-        Shipment::insert([
-            ['order_vendor_id' => 1, 'shipment_address_id' => 1, 'shipment_courier_id' => 1, 'shipping_cost' => 20000],
-            ['order_vendor_id' => 2, 'shipment_address_id' => 2, 'shipment_courier_id' => 2, 'shipping_cost' => 15000],
-            ['order_vendor_id' => 3, 'shipment_address_id' => 3, 'shipment_courier_id' => 3, 'shipping_cost' => 18000],
-        ]);
-
-
-        OrderItem::insert([
-            ['order_vendor_id' => 1, 'product_variant_id' => 1, 'price' => 10000000, 'quantity' => 1, 'total' => 10000000],
-            ['order_vendor_id' => 2, 'product_variant_id' => 2, 'price' => 100000, 'quantity' => 1, 'total' => 100000],
-            ['order_vendor_id' => 3, 'product_variant_id' => 3, 'price' => 80000, 'quantity' => 1, 'total' => 80000],
-        ]);
-
-        Review::insert([
-            ['user_id' => 3, 'product_id' => 1, 'order_item_id' => 1, 'rating' => 5],
-            ['user_id' => 3, 'product_id' => 2, 'order_item_id' => 2, 'rating' => 4],
-            ['user_id' => 3, 'product_id' => 3, 'order_item_id' => 3, 'rating' => 5],
+        Review::factory()->create([
+            'user_id' => $user->id,
+            'product_id' => $product->id,
+            'order_item_id' => $orderItem->id,
         ]);
     }
 }

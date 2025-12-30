@@ -1,5 +1,5 @@
 <div>
-      @livewire('navbar')
+    @livewire('navbar')
 
     <div class="min-h-screen  p-12">
         <div class="">
@@ -158,17 +158,19 @@
         <div class="flex-1 w-1/2 space-y-5">
             <h1 class="text-2xl/loose font-semibold">Produk Lainnya dari toko ini</h1>
 
-            <div class="swiper vendorProducts h-100 " data-aos="fade-up">
+            <div class="swiper vendorProducts  " data-aos="fade-up">
                 <div class="swiper-wrapper ">
                     @foreach ($product->vendor->products as $key => $product)
                     <a href="{{ route('produk.detail', ['slug' => $product->slug]) }}" class="swiper-slide "
                         wire:key="product-{{ $product->id }}">
-                        <div class="relative">
-                            <img src="{{ asset('images/product-paceholder.jpg') }}" alt="" class="rounded-xl">
-                            <div
-                                class="absolute top-2 left-2 bg-primary px-3 py-1 rounded-md text-sm font-medium text-white">
-                                {{ $product->category->name }}
-                            </div>
+                        <div class="relative w-full aspect-[4/3] overflow-hidden rounded-xl">
+                            <img src="{{ asset('images/product-paceholder.jpg') }}"
+                                class="w-full h-full object-cover">
+
+                            <span
+                                class="absolute top-2 left-2 bg-primary px-3 py-1 rounded-md text-xs font-medium text-white">
+                                asd
+                            </span>
                         </div>
                         <div class="mt-4 space-y-2">
                             <h1 class="text-xl font-light text-overflow-ellipsis truncate uppercase">
@@ -202,30 +204,32 @@
     <div class="px-12 py-24 space-y-14">
         <h1 class="text-2xl/loose font-semibold">Review Produk</h1>
         <div class="swiper comentarSwiper h-96 w-full" data-aos="fade-up">
-        <div class="swiper-wrapper ">
-            @foreach ($reviews as $i => $review)
-            <div class="relative swiper-slide h-96 w-full px-5
+            <div class="swiper-wrapper ">
+                @forelse ($reviews as $i => $review)
+                <div class="relative swiper-slide h-96 w-full px-5
                 ">
-                <div class="flex gap-5 ">
-                    <img src="{{ Storage::url($review->user?->profile_photo_path ?? 'user-placeholder.png') }}" alt=""
-                        class="size-14 rounded-full object-cover object-center ">
-                    <div class="">
-                        <h1 class="text-lg font-semibold ">{{ $review->user->name }}</h1>
-                        <p class="text-sm/normal font-light">{{ $review->user->email }}</p>
+                    <div class="flex gap-5 ">
+                        <img src="{{ Storage::url($review->user?->profile_photo_path ?? 'user-placeholder.png') }}"
+                            alt="" class="size-14 rounded-full object-cover object-center ">
+                        <div class="">
+                            <h1 class="text-lg font-semibold ">{{ $review->user->name }}</h1>
+                            <p class="text-sm/normal font-light">{{ $review->user->email }}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="mt-5 text-sm/loose font-light">
+                            "{{ $review->comment}}"
+                        </p>
                     </div>
                 </div>
-                <div>
-                    <p class="mt-5 text-sm/loose font-light">
-                        "{{ $review->comment}}"
-                    </p>
-                </div>
+                @empty
+                <h1>Belum ada review untuk produk ini.</h1>
+                @endforelse
+
+
             </div>
-            @endforeach
-
-
+            <div class="swiper-pagination"></div>
         </div>
-        <div class="swiper-pagination"></div>
-    </div>
 
 
 

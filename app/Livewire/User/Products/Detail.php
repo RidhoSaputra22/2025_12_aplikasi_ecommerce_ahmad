@@ -118,7 +118,7 @@ class Detail extends Component
             );
         });
 
-        $this->dispatch('cartUpdated');
+        $this->dispatch('cart-updated');
 
 
 

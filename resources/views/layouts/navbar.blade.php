@@ -48,7 +48,8 @@ return request()->routeIs($patterns);
                     class="absolute -top-2 -right-2.5  text-sm/normal h-5 w-5 bg-primary text-white flex items-center justify-center rounded-full">
                     {{ $this->cartCount }}
                 </span>
-                <div class="absolute -bottom-12 -right-1.5 w-52">
+                <div class="absolute -bottom-12 -right-1.5 w-52" x-data="{ show: false }" x-on:cart-updated.window="show = true; setTimeout(() => show = false, 2000)"
+                    x-show="show" x-transition.duration.500ms>
                     <div class="relative">
                         <span
                             class="absolute -top-3 z-20 right-2 inline-block w-0 h-0 border-solid border-t-0 border-r-[9px] border-l-[9px] border-b-[17.3px] border-l-transparent border-r-transparent border-t-transparent border-b-white">

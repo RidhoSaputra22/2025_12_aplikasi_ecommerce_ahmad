@@ -10,6 +10,7 @@ class Navbar extends Component
 
     protected $listeners = [
         'cart-updated-nav' => '$refresh',
+        'cart-updated' => '$refresh',
     ];
 
      public function getCartCountProperty()

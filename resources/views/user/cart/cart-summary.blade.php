@@ -13,11 +13,7 @@
         </div>
         @endif
 
-        @if ($errors->has('cart'))
-        <div class="mt-3 p-3 border border-red-200 bg-red-50 rounded-lg text-sm text-red-700">
-            {{ $errors->first('cart') }}
-        </div>
-        @endif
+
 
         <div class="mt-4 space-y-2 text-sm">
             <div class="flex justify-between">
@@ -41,6 +37,40 @@
         </div>
 
         <form wire:submit.prevent="checkout" class="mt-6 space-y-4">
+            <div class="pt-4 border-t border-gray-200">
+                <div class="flex items-center justify-between gap-3">
+                    <h3 class="text-sm font-semibold">Alamat Pengiriman</h3>
+
+                    <button
+                        type="button"
+                        wire:click="openShippingAddressModal"
+                        class="cursor-pointer text-sm text-primary"
+                    >
+                        Pilih Alamat
+                    </button>
+                </div>
+
+                <div class="mt-3 text-sm">
+                    @if ($this->selectedShipmentAddress)
+                        <div class="text-gray-800 font-medium">
+                            {{ $this->selectedShipmentAddress->district }}, {{ $this->selectedShipmentAddress->city }}
+                        </div>
+                        <div class="mt-1 text-gray-700">
+                            {{ $this->selectedShipmentAddress->address }}
+                        </div>
+                        <div class="mt-1 text-xs text-gray-500">
+                            {{ $this->selectedShipmentAddress->province }} • {{ $this->selectedShipmentAddress->postal_code }}
+                        </div>
+                    @else
+                        <p class="text-gray-600">Belum memilih alamat pengiriman.</p>
+                    @endif
+                    @error('shipmentAddressId')
+                        <div class="mt-1 text-xs text-red-600">{{ $message }}</div>
+
+                    @enderror
+                </div>
+            </div>
+
             <div class="pt-4 border-t border-gray-200">
                 <h3 class="text-sm font-semibold">Detail Pembeli</h3>
                 <div class="mt-3 space-y-3 ">

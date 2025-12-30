@@ -121,12 +121,7 @@
 
                         <h1 class="text-2xl/normal font-semibold">Deskripsi Produk</h1>
                         <p class=" leading-relaxed">
-                            Produk adalah sepeda listrik modern dengan desain yang elegan dan
-                            performa yang handal.
-                            Dilengkapi dengan motor listrik yang powerful dan baterai tahan lama, sepeda ini cocok
-                            untuk
-                            mobilitas
-                            sehari-hari yang ramah lingkungan.
+                            {{ $product->description }}
                         </p>
                     </div>
                 </div>
@@ -136,7 +131,7 @@
         </div>
     </div>
 
-    <div class=" px-12  flex gap-14">
+    <div class=" px-12  flex gap-14" wire:ignore>
         <div class="flex-1 space-y-5">
             <h1 class="text-2xl/loose font-semibold">Deskripsi Toko</h1>
             <div class="flex gap-5 items-center">
@@ -158,12 +153,12 @@
         <div class="flex-1 w-1/2 space-y-5">
             <h1 class="text-2xl/loose font-semibold">Produk Lainnya dari toko ini</h1>
 
-            <div class="swiper vendorProducts  " data-aos="fade-up">
+            <div class="swiper vendorProducts  " data-aos="fade-up" >
                 <div class="swiper-wrapper ">
                     @foreach ($product->vendor->products as $key => $product)
                     <a href="{{ route('produk.detail', ['slug' => $product->slug]) }}" class="swiper-slide "
                         wire:key="product-{{ $product->id }}">
-                        <div class="relative w-full aspect-[4/3] overflow-hidden rounded-xl">
+                        <div class="relative w-full aspect-4/3 overflow-hidden rounded-xl">
                             <img src="{{ asset('images/product-paceholder.jpg') }}"
                                 class="w-full h-full object-cover">
 
@@ -201,7 +196,7 @@
         </div>
     </div>
 
-    <div class="px-12 py-24 space-y-14">
+    <div class="px-12 py-24 space-y-14" wire:ignore>
         <h1 class="text-2xl/loose font-semibold">Review Produk</h1>
         <div class="swiper comentarSwiper h-96 w-full" data-aos="fade-up">
             <div class="swiper-wrapper ">

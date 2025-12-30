@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     {{-- Swiper --}}
@@ -12,15 +13,11 @@
     {{-- AOS --}}
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
-    <!-- Alpine Plugins -->
-    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
-
-    <!-- Alpine Core -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
-    * {
-        /* outline: 1px solid red !important; */
+    /* outline helper (sementara): tambahkan rule jika diperlukan */
+    [x-cloak] {
+        display: none !important;
     }
     </style>
 
@@ -32,7 +29,13 @@
 </head>
 
 <body>
-    @yield('content')
+    @isset($slot)
+        {{ $slot }}
+    @else
+        @yield('content')
+    @endisset
+
+    @livewire('global-modal')
 
     {{-- Swiper --}}
     <script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
@@ -42,6 +45,7 @@
 
     <!-- Livewire -->
     @livewireScripts
+    @livewireScriptConfig
 
     @stack('scripts')
     <script>

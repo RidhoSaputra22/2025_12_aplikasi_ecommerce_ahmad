@@ -1,7 +1,7 @@
 <section>
     @livewire('navbar')
     <div class="p-12 ">
-        <div class="min-h-screen flex  gap-10">
+        <div class="min-h-screen flex  gap-14">
             <div class="flex-3">
                 <div class="space-y-2">
                     <h1 class="text-3xl font-semibold">Keranjang Belanja</h1>

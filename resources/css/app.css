@@ -22,6 +22,9 @@
     --swiper-pagination-bullet-vertical-gap: 6px;
 }
 
+* {
+    /* outline: 1px solid red !important; */
+}
 
 .input-form {
     label {
@@ -61,6 +64,10 @@
     button {
         @apply px-6 py-4  rounded-md cursor-pointer;
     }
+}
+
+button {
+    cursor: pointer;
 }
 
 /* SWIPER */

@@ -1,16 +1,5 @@
-<div class="relative" wire:loading.class="opacity-60"  >
+<div class="relative" wire:loading.class="opacity-60">
 
-    @if (!auth()->check())
-    <div class="p-4 border border-gray-200 rounded-lg">
-        <p class="text-sm text-gray-600">Silakan login untuk melihat keranjang.</p>
-        <a href="{{ route('user.login') }}" class="inline-block mt-2 text-primary">Login</a>
-    </div>
-    @elseif ($this->cartItems->isEmpty())
-    <div class="p-4 border border-gray-200 rounded-lg">
-        <p class="text-sm text-gray-600">Keranjang masih kosong.</p>
-        <a href="{{ route('produk.cari') }}" class="inline-block mt-2 text-primary">Cari produk</a>
-    </div>
-    @else
     <div class="h-14">
         <div wire:loading.delay wire:target="increment,decrement,setQuantity,removeItem,clearCart"
             class="flex items-center justify-center">
@@ -31,6 +20,19 @@
         @endif
     </div>
 
+    @if (!auth()->check())
+    <div class="p-4 border border-gray-200 rounded-lg">
+        <p class="text-sm text-gray-600">Silakan login untuk melihat keranjang.</p>
+        <a href="{{ route('user.login') }}" class="inline-block mt-2 text-primary">Login</a>
+    </div>
+    @elseif ($this->cartItems->isEmpty())
+    <div class="p-4 border border-gray-200 rounded-lg">
+        <p class="text-sm text-gray-600">Keranjang masih kosong.</p>
+        <a href="{{ route('produk.cari') }}" class="inline-block mt-2 text-primary">Cari produk</a>
+    </div>
+    @else
+
+
     <div class="space-y-10 min-h-100" wire:loading.attr="aria-busy"
         wire:target="increment,decrement,setQuantity,removeItem,clearCart">
         @foreach ($this->cartItems as $item)
@@ -50,9 +52,11 @@
                 <div class="flex-1 space-y-1 ">
                     <h1 class="text-sm/tight font-light">{{ $product?->category->name ?? 'Produk' }}</h1>
                     <h3 class="text-2xl/normal font-semibold uppercase ">{{ $product?->name ?? 'Produk' }}</h3>
-                    <p class="uppercase text-xl font-medium">Rp {{ number_format((float) $item->price, 0, ',', ',') }}</p>
+                    <p class="uppercase text-xl font-medium">Rp {{ number_format((float) $item->price, 0, ',', ',') }}
+                    </p>
                     @if ($variant?->variant_name)
-                        <p class="px-3 py-2 bg-primary text-white text-sm inline-block rounded-md ">{{ $variant->variant_name }}</p>
+                    <p class="px-3 py-2 bg-primary text-white text-sm inline-block rounded-md ">
+                        {{ $variant->variant_name }}</p>
                     @endif
                 </div>
             </div>
@@ -68,8 +72,8 @@
                     </button>
 
                     <input type="text" inputmode="numeric" pattern="[0-9]*" value="{{ (int) $item->quantity }}"
-
-                        class="w-16 h-8 text-center border border-gray-300 rounded text-sm focus:outline-none cursor-default" readonly>
+                        class="w-16 h-8 text-center border border-gray-300 rounded text-sm focus:outline-none cursor-default"
+                        readonly>
 
                     <button type="button" wire:click="increment({{ $item->id }})" wire:loading.attr="disabled"
                         wire:target="increment"

@@ -16,6 +16,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class CartSummary extends Component
@@ -30,6 +31,8 @@ class CartSummary extends Component
     public string $district = '';
     public string $postal_code = '';
     public string $address = '';
+
+    public ?int $shipmentAddressId = null;
 
     protected $listeners = [
         'cart-updated' => '$refresh',
@@ -47,14 +50,63 @@ class CartSummary extends Component
         $this->email = (string) ($user->email ?? 'TEST');
         $this->phone = (string) ($user->phone ?? 'TEST');
 
-        // $latestAddress = $user->addresses()->latest('id')->first();
-        $this->province = (string) ($latestAddress->province ?? 'TEST');
-        $this->city = (string) ($latestAddress->city ?? 'TEST');
-        $this->district = (string) ($latestAddress->district ?? 'TEST');
-        $this->postal_code = (string) ($latestAddress->postal_code ?? 'TEST');
-        $this->address = (string) ($latestAddress->address ?? 'TEST');
-        // if ($latestAddress) {
-        // }
+        $latestAddress = $user->addresses()->latest('id')->first();
+
+        if ($latestAddress) {
+            $this->shipmentAddressId = (int) $latestAddress->id;
+            $this->province = (string) ($latestAddress->province ?? '');
+            $this->city = (string) ($latestAddress->city ?? '');
+            $this->district = (string) ($latestAddress->district ?? '');
+            $this->postal_code = (string) ($latestAddress->postal_code ?? '');
+            $this->address = (string) ($latestAddress->address ?? '');
+        }
+    }
+
+    public function getSelectedShipmentAddressProperty(): ?ShipmentAddress
+    {
+        if (!Auth::check() || !$this->shipmentAddressId) {
+            return null;
+        }
+
+        return ShipmentAddress::query()
+            ->where('id', $this->shipmentAddressId)
+            ->where('user_id', Auth::id())
+            ->first();
+    }
+
+    public function openShippingAddressModal(): void
+    {
+        $this->dispatch(
+            'openModal',
+            component: 'user.cart.shipping-address-picker',
+            arguments: ['selectedId' => $this->shipmentAddressId],
+            title: 'Pilih Alamat Pengiriman',
+            maxWidth: '7xl',
+        );
+    }
+
+    #[On('shipping-address:selected')]
+    public function setShippingAddress(int $shipmentAddressId): void
+    {
+        if (!Auth::check()) {
+            return;
+        }
+
+        $address = ShipmentAddress::query()
+            ->where('id', $shipmentAddressId)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$address) {
+            return;
+        }
+
+        $this->shipmentAddressId = (int) $address->id;
+        $this->province = (string) ($address->province ?? '');
+        $this->city = (string) ($address->city ?? '');
+        $this->district = (string) ($address->district ?? '');
+        $this->postal_code = (string) ($address->postal_code ?? '');
+        $this->address = (string) ($address->address ?? '');
     }
 
     public function getCartItemsProperty(): Collection
@@ -87,11 +139,9 @@ class CartSummary extends Component
         return (float) $this->cartItems->sum(fn (CartItem $item) => ((float) $item->price) * ((int) $item->quantity));
     }
 
-    public function checkout(){
-        return sleep(2);
-    }
 
-    public function checkoutMMXXX(): void
+
+    public function checkout(): void
     {
         if (!Auth::check()) {
             $this->redirectRoute('user.login');
@@ -102,11 +152,7 @@ class CartSummary extends Component
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:50'],
-            'province' => ['required', 'string', 'max:255'],
-            'city' => ['required', 'string', 'max:255'],
-            'district' => ['required', 'string', 'max:255'],
-            'postal_code' => ['required', 'string', 'max:30'],
-            'address' => ['required', 'string'],
+            'shipmentAddressId' => ['required', 'integer', 'exists:shipment_addresses,id'],
         ], [
             'postal_code.required' => 'Kode pos wajib diisi.',
         ]);
@@ -152,14 +198,7 @@ class CartSummary extends Component
                 ]);
             }
 
-            $shipmentAddress = ShipmentAddress::query()->create([
-                'user_id' => $user->id,
-                'province' => $validated['province'],
-                'city' => $validated['city'],
-                'district' => $validated['district'],
-                'postal_code' => $validated['postal_code'],
-                'address' => $validated['address'],
-            ]);
+
 
             $order = Order::query()->create([
                 'user_id' => $user->id,
@@ -232,7 +271,7 @@ class CartSummary extends Component
 
                 Shipment::query()->create([
                     'order_vendor_id' => $orderVendor->id,
-                    'shipment_address_id' => $shipmentAddress->id,
+                    'shipment_address_id' => $this->shipmentAddressId,
                     'shipment_courier_id' => null,
                     'tracking_number' => null,
                     'shipping_cost' => 0,

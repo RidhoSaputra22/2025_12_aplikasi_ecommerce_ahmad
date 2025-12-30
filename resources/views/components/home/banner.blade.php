@@ -1,4 +1,4 @@
-<section class="">
+<section class="" wire:ignore>
 
     <!-- Swiper -->
     <div class="swiper bannerSwiper h-150">

@@ -4,28 +4,10 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use App\Models\Cart;
-use App\Models\CartItem;
-use App\Models\Category;
-use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\OrderVendor;
-use App\Models\Payment;
-use App\Models\Product;
-use App\Models\ProductImage;
-use App\Models\ProductVariant;
-use App\Models\Review;
 use App\Models\Role;
-use App\Models\Shipment;
-use App\Models\ShipmentAddress;
-use App\Models\ShipmentCourier;
 use App\Models\User;
 use App\Models\UserRole;
-use App\Models\Vendor;
-use App\Models\VendorAddress;
-use App\Models\VendorBankAccount;
-use App\Models\VendorWallet;
-use App\Models\VendorWalletTransaction;
+
 
 class DatabaseSeeder extends Seeder
 {
@@ -37,6 +19,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Factory validation: buat 1 record per model (ringan), dengan relasi terhubung.
+
+        $this->call([
+            // CategorySeeder::class,
+            ProductSeeder::class,
+            // ReviewSeeder::class,
+        ]);
 
         Role::insert([
             ['name' => 'admin'],
@@ -59,7 +47,7 @@ class DatabaseSeeder extends Seeder
 
             [
                 'name' => 'Customer',
-                'email' => 'customer@example.com',
+                'email' => 'customer@gmail.com',
                 'password' => bcrypt('customer'),
             ]
 
@@ -79,19 +67,5 @@ class DatabaseSeeder extends Seeder
                 'role_id' => 3,
             ]
         ]);
-
-        Product::factory()
-            ->count(10)
-            ->has(ProductImage::factory()
-                ->count(1))
-            ->has(ProductVariant::factory()->count(2))
-            ->create();
-
-        Category::factory()
-            ->count(5)
-            ->has(Product::factory()->count(2))
-
-            ->create()
-        ;
     }
 }

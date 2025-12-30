@@ -2,9 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Models\Review;
 use App\Models\Product;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Category;
+use App\Models\ProductImage;
+use App\Models\ProductVariant;
 use Illuminate\Database\Seeder;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class ProductSeeder extends Seeder
 {
@@ -13,11 +17,33 @@ class ProductSeeder extends Seeder
      */
     public function run(): void
     {
-        // Membuat 50 produk menggunakan factory
-        Product::factory()
-            ->count(50)
-            ->hasProductImages(3)
-            ->hasProductVariants(2)
-            ->create();
-    }
+        $categories = [
+            'Kerajinan Lokal',
+            'Sayur dan Buah',
+            'Makanan Ringan',
+            'Pakaian dan Aksesoris',
+            'Produk Digital',
+        ];
+
+        foreach ($categories as $categoryName) {
+            Category::factory()
+            ->has(
+                Product::factory()
+                ->count(10)
+                ->has(
+                    ProductImage::factory()
+                    ->count(1)
+                )
+                ->has(
+                    ProductVariant::factory()->count(1)
+                )
+                ->has(Review::factory()->count(30))
+
+            )
+            ->create([
+                'name' => $categoryName,
+            ]);
+
+        }
+        }
 }

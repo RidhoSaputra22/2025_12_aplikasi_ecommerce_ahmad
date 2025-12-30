@@ -6,11 +6,13 @@ use App\Livewire\User\Products\Detail;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Livewire\User\Auth\Regist;
+use App\Livewire\User\Home\Welcome;
+use App\Livewire\User\Products\Cari;
 
-Route::get('/', [HomeController::class, 'index'])->name('welcome');
+Route::get('/', Welcome::class)->name('welcome');
 
 
-Route::get('/produk', [ProductController::class, 'produk'])->name('produk');
+Route::get('/produk', Cari::class)->name('produk.cari');
 Route::get('/produk/detail/{slug}', Detail::class)->name('produk.detail');
 Route::get('/tentang', [HomeController::class, 'tentang'])->name('tentang');
 Route::get('/keranjang', [HomeController::class, 'keranjang'])->name('keranjang');

@@ -20,7 +20,7 @@ class ProductFactory extends Factory
      */
     public function definition(): array
     {
-        $name = fake()->words(rand(2, 4), true);
+        $name = fake()->sentence($nbWords = 3, $variableNbWords = true);
 
         return [
             'vendor_id' => Vendor::inRandomOrder()->first()?->id ?? Vendor::factory(),

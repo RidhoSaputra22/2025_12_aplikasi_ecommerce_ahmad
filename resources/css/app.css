@@ -22,9 +22,6 @@
     --swiper-pagination-bullet-vertical-gap: 6px;
 }
 
-* {
-    /* outline: 1px solid red !important; */
-}
 
 .input-form {
     label {
@@ -79,4 +76,19 @@
 
 .swiper-pagination-bullet-active {
     background-color: #ffffff !important;
+}
+
+/* CHAT BUBBLE */
+
+.chat-bubble.sent {
+  background-color: #dcf8c6; /* Example color (light green) */
+  color: black;
+  margin-left: auto; /* Aligns to the right */
+}
+
+.chat-bubble.sent::after {
+  border-top: 10px solid #dcf8c6; /* Match the sent bubble color */
+  right: -7px; /* Position to the right */
+  left: auto; /* Override left positioning */
+  transform: rotate(45deg); /* Adjust rotation for the right side */
 }

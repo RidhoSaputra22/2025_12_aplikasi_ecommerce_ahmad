@@ -1,4 +1,4 @@
-<section class=" bg-primary h-full m-12 p-24 rounded-2xl text-white" data-aos="fade-up">
+<section class=" bg-primary h-full m-12 p-24 rounded-2xl text-white" data-aos="fade-up" wire:ignore>
     <div class="max-w-6xl mx-auto space-y-12">
         <h1 class="text-5xl/relaxed font-semibold  text-center">
             Tunggu Apa Lagi? Yuk Bergabung Bersama Kami Sekarang Juga!

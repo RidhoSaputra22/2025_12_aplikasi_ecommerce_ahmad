@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 class Detail extends Component
 {
 
-    public string $slug;
+    public ?string $slug = null;
     public int $quantity = 1;
     public ?int $selectedVariantId = null;
 
@@ -118,6 +118,10 @@ class Detail extends Component
             );
         });
 
+        $this->dispatch('cartUpdated');
+
+
+
         if (!$this->getErrorBag()->has('quantity')) {
             session()->flash('success', 'Produk berhasil dimasukkan ke keranjang.');
         }
@@ -128,10 +132,12 @@ class Detail extends Component
 
     public function render()
     {
-        $product = Product::where('slug', $this->slug)->firstOrFail();
+        $product = Product::with(['productImages', 'productVariants', 'reviews.user', 'category'])->where('slug', $this->slug)->firstOrFail();
         $productImages = $product->productImages;
         $productVariants = $product->productVariants;
         $reviews = $product->reviews()->with('user')->get();
+
+        // dd($product, $productImages, $productVariants, $reviews);
 
         if ($this->selectedVariantId === null) {
             $this->selectedVariantId = $productVariants->first()?->id;

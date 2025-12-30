@@ -1,4 +1,4 @@
-<section class="w-full  gap-10 p-12 space-y-14">
+<section class="w-full  gap-10 p-12 space-y-14" wire:ignore>
     <div class="  pt-8" data-aos="fade-up">
         <div class="max-w-4xl space-y-4">
             <h1 class="text-6xl/tight font-semibold">Berita Terbaru</h1>

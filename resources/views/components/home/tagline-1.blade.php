@@ -1,4 +1,4 @@
-<section class=" flex  gap-10 p-12 space-y-14  ">
+<section class=" flex  gap-10 p-12 space-y-14  " wire:ignore>
     <div class="space-y-5 flex-1 pt-8" data-aos="fade-up">
         <h1 class="text-6xl/tight font-semibold">Membawa Lokal Untuk Indonesia</h1>
         <p class="text-lg/loose font-light">

@@ -1,6 +1,15 @@
+@props([
+    'label',
+    'wireModel' => null,
+    'options' => [],
+    'selected' => null,
+    'default' => null,
+    'class' => null,
+])
+
 <div class="input-form">
-    <label for="{{ $name }}">{{ $label }}</label>
-    <select name="{{ $name }}" id="{{ $name }}" class="{{$class ?? ''}}">
+    <label for="{{ $wireModel }}">{{ $label }}</label>
+    <select wire:model.live="{{ $wireModel }}" id="{{ $wireModel }}" class="{{$class ?? ''}}">
         @if (isset($default))
         <option value="{{ $default['value'] }}"
             {{ (isset($selected) && $selected == $default['value']) ? 'selected' : '' }}>{{ $default['label'] }}

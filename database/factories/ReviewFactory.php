@@ -24,7 +24,7 @@ class ReviewFactory extends Factory
             'product_id' => Product::factory(),
             'order_item_id' => OrderItem::factory(),
             'rating' => fake()->numberBetween(1, 5),
-            'comment' => fake()->boolean(80) ? fake()->sentence(rand(8, 16)) : null,
+            'comment' => fake()->sentence(rand(8, 16)),
         ];
     }
 }

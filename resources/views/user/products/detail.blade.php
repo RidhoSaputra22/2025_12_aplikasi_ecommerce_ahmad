@@ -1,5 +1,6 @@
 <div>
-    @include('layouts.navbar')
+      @livewire('navbar')
+
     <div class="min-h-screen  p-12">
         <div class="">
 
@@ -10,7 +11,7 @@
                     <!-- Product Images -->
                     <div class="flex-1 space-y-4 relative">
                         <!-- Main Image -->
-                        <img src="{{ Storage::url($productImages->first()->image) }}" alt="Produk"
+                        <img src="{{ Storage::url($productImages->first()?->image) }}" alt="Produk"
                             class="w-full h-full object-cover object-center rounded-2xl">
 
                         <!-- Thumbnail Images -->
@@ -36,7 +37,7 @@
                         </div>
                         @endif
 
-                        <a href="{{ route('produk', ['category' => $product->category->id]) }}"
+                        <a href="{{ route('produk.cari', ['category' => $product->category->slug]) }}"
                             class="flex justify-between items-center ">
                             <p class="uppercase px-3 py-2 border hover:border-primary  rounded-lg">
                                 {{ $product->category->name }}
@@ -135,5 +136,124 @@
         </div>
     </div>
 
+    <div class=" px-12  flex gap-14">
+        <div class="flex-1 space-y-5">
+            <h1 class="text-2xl/loose font-semibold">Deskripsi Toko</h1>
+            <div class="flex gap-5 items-center">
+                <img src="{{ Storage::url($product->vendor?->logo ?? 'vendor/user-1.png') }}" alt=""
+                    class="size-14 rounded-full object-cover object-center">
+                <div class="space-y-1">
+                    <h1 class="text-2xl font-bold ">
+                        {{ $product->vendor->store_name }}
+                    </h1>
+                    <p class="text-sm/normal font-light">
+                        {{ $product->vendor->user->email }}
+                    </p>
+                </div>
+            </div>
+            <div class="text-xl  font-light">
+                {{$product->vendor->description}}
+            </div>
+        </div>
+        <div class="flex-1 w-1/2 space-y-5">
+            <h1 class="text-2xl/loose font-semibold">Produk Lainnya dari toko ini</h1>
+
+            <div class="swiper vendorProducts h-100 " data-aos="fade-up">
+                <div class="swiper-wrapper ">
+                    @foreach ($product->vendor->products as $key => $product)
+                    <a href="{{ route('produk.detail', ['slug' => $product->slug]) }}" class="swiper-slide "
+                        wire:key="product-{{ $product->id }}">
+                        <div class="relative">
+                            <img src="{{ asset('images/product-paceholder.jpg') }}" alt="" class="rounded-xl">
+                            <div
+                                class="absolute top-2 left-2 bg-primary px-3 py-1 rounded-md text-sm font-medium text-white">
+                                {{ $product->category->name }}
+                            </div>
+                        </div>
+                        <div class="mt-4 space-y-2">
+                            <h1 class="text-xl font-light text-overflow-ellipsis truncate uppercase">
+                                {{ $product->name }}
+                            </h1>
+                            <h1 class="text-lg font-semibold mt-2">Rp.
+                                {{ number_format($product->price, 0, ',', ',') }}
+                            </h1>
+                            <div class="flex gap-2 text-primary items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
+                                </svg>
+                                <p class="truncate text-md/loose w-1/2">Toko
+                                    {{ $product->vendor->store_name  ?? 'Nama Toko' }}
+                                </p>
+
+                            </div>
+                        </div>
+                    </a>
+                    @endforeach
+
+
+                </div>
+                <div class="swiper-pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-12 py-24 space-y-14">
+        <h1 class="text-2xl/loose font-semibold">Review Produk</h1>
+        <div class="swiper comentarSwiper h-96 w-full" data-aos="fade-up">
+        <div class="swiper-wrapper ">
+            @foreach ($reviews as $i => $review)
+            <div class="relative swiper-slide h-96 w-full px-5
+                ">
+                <div class="flex gap-5 ">
+                    <img src="{{ Storage::url($review->user?->profile_photo_path ?? 'user-placeholder.png') }}" alt=""
+                        class="size-14 rounded-full object-cover object-center ">
+                    <div class="">
+                        <h1 class="text-lg font-semibold ">{{ $review->user->name }}</h1>
+                        <p class="text-sm/normal font-light">{{ $review->user->email }}</p>
+                    </div>
+                </div>
+                <div>
+                    <p class="mt-5 text-sm/loose font-light">
+                        "{{ $review->comment}}"
+                    </p>
+                </div>
+            </div>
+            @endforeach
+
+
+        </div>
+        <div class="swiper-pagination"></div>
+    </div>
+
+
+
+    </div>
+
     @include('layouts.footter')
 </div>
+@push('scripts')
+<script>
+const vendorProducts = new Swiper(".vendorProducts", {
+    slidesPerView: 3,
+    spaceBetween: 16,
+    loop: true,
+    speed: 400,
+    autoplay: {
+        delay: 2500,
+        disableOnInteraction: false,
+    },
+});
+const comentarSwiper = new Swiper(".comentarSwiper", {
+    slidesPerView: 4,
+    spaceBetween: 16,
+    loop: true,
+    speed: 400,
+    autoplay: {
+        delay: 2500,
+        disableOnInteraction: false,
+    },
+});
+</script>
+@endpush

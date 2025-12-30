@@ -1,95 +1,70 @@
-<section class="p-12 min-h-screen ">
-    <form class="flex gap-24">
-        <div class="flex-1 bg-white rounded-2xl ">
+<section class="p-12 min-h-screen " id="#paginated-posts">
+    <div class="flex gap-24">
+        {{-- FILTER --}}
+        <div class="flex-1 bg-white rounded-2xl">
             <h1 class="text-xl font-semibold mb-6">Filter Produk</h1>
+
             <div class="space-y-6">
                 @component('components.form.select', [
-                'label' => 'Kategori',
-                'name' => 'category',
-                'selected' => $request->category ?? null,
-                'class' => 'uppercase',
-                'default' => [
-                'label' => 'Semua Kategori',
-                'value' => 'all',
-                ],
-                'options' => $categories->map(function ($category) {
-                return [
-                'label' => $category->name,
-                'value' => $category->id,
-                ];
-                }),
-                ])
-                @endcomponent
+                    'label' => 'Kategori',
+                    'wireModel' => 'selectedCategorySlug',
+                    'default' => [
+                        'label' => 'Semua Kategori',
+                        'value' => '',
+                    ],
+                    'options' => $categories->map(fn ($c) => [
+                        'label' => $c->name,
+                        'value' => $c->slug,
+                    ]),
+                ]) @endcomponent
 
                 @component('components.form.select', [
-                'label' => 'Harga',
-                'name' => 'price',
-                'selected' => $request->price ?? null,
-                'options' => [
-                [
-                'label' => 'Semua Harga',
-                'value' => 'all',
-                ],
-                [
-                'label' => 'Rendah ke Tinggi',
-                'value' => 'low_to_high',
-                ],
-                [
-                'label' => 'Tinggi ke Rendah',
-                'value' => 'high_to_low',
-                ],
-                ],
-                ])
-                @endcomponent
+                    'label' => 'Harga',
+                    'wireModel' => 'selectedHarga',
+                    'options' => [
+                        ['label' => 'Semua Harga', 'value' => ''],
+                        ['label' => 'Rendah ke Tinggi', 'value' => 'low_to_high'],
+                        ['label' => 'Tinggi ke Rendah', 'value' => 'high_to_low'],
+                    ],
+                ]) @endcomponent
 
                 @component('components.form.select', [
-                'label' => 'Urutkan',
-                'name' => 'sort',
-                'selected' => $request->sort ?? null,
-                'options' => [
-                [
-                'label' => 'Terbaru',
-                'value' => 'newest',
-                ],
-                [
-                'label' => 'Terlaris',
-                'value' => 'bestseller',
-                ],
-                [
-                'label' => 'Rating Tertinggi',
-                'value' => 'top_rated',
-                ],
-                ],
-                ])
-                @endcomponent
-                @component('components.form.button', [
-                'label' => 'Submit',
-                'class' => 'w-full bg-primary text-white'
-                ])
-
-                @endcomponent
+                    'label' => 'Urutkan',
+                    'wireModel' => 'selectedSortBy',
+                    'options' => [
+                        ['label' => 'Terbaru', 'value' => 'newest'],
+                        ['label' => 'Terlama', 'value' => 'oldest'],
+                    ],
+                ]) @endcomponent
             </div>
-
         </div>
-        <div class="flex-5 space-y-14">
+        <div class="flex-5 space-y-14 ">
             <div>
-                <input type="text" name="search" class="border rounded px-4 py-2 w-full"
-                    placeholder="Masukkan nama produk..." value="{{ $request->search ?? '' }}">
+               <input
+    type="text"
+    wire:model.live.debounce.500ms="search"
+    class="border rounded px-4 py-2 w-full"
+    placeholder="Masukkan nama produk..."
+>
             </div>
-            <div>
-                {{ $products->links() }}
-            </div>
-            <div class="grid grid-cols-4 gap-10">
+            {{ $products->links(data: ['scrollTo' => '#paginated-posts']) }}
+
+            <div class="grid grid-cols-4 gap-10 " wire:loading.class="opacity-60 bg-white animate-pulse" >
                 @forelse ($products as $product)
                 <a href="{{ route('produk.detail', ['slug' => $product->slug]) }}" class="">
-                    <img src="{{ Storage::url($product->productImages->first->image->image ?? 'products/product_placeholder.jpg') }}"
+                    <div class="relative">
+                        <img src="{{ Storage::url($product->productImages->first->image->image ?? 'products/product_placeholder.jpg') }}"
                         alt="" class="rounded-xl w-full h-60 object-cover">
+                        <div
+                            class="absolute top-2 left-2 bg-primary px-3 py-1 rounded-md text-sm font-medium text-white">
+                            {{ $product->category->name }}</div>
+                    </div>
                     <div class="mt-4 space-y-2">
-                        <h1 class="text-xl font-light text-overflow-ellipsis truncate uppercase">SEPATU RAJUTAN
+                        <h1 class="text-xl font-light text-overflow-ellipsis truncate uppercase">
                             {{ $product->name }}
                         </h1>
                         <h1 class="text-lg font-semibold mt-2">Rp.
-                            {{ number_format($product->price, 0, ',', '.') }}
+                            {{ number_format($product->price, 0, ',', ',') }}
                         </h1>
                         <div class="flex gap-2 text-primary items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -107,11 +82,8 @@
                 @empty
                 <p class="text-center col-span-4 text-lg font-light">Produk tidak ditemukan</p>
                 @endforelse
+            </div>
 
-            </div>
-            <div>
-                {{ $products->links() }}
-            </div>
         </div>
-    </form>
+    </div>
 </section>

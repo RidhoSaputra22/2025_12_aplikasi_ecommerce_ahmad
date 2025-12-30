@@ -1,3 +1,13 @@
+@props([
+    'label' => '',
+    'wireModel',
+    'type' => 'text',
+    'placeholder' => '',
+    'required' => false,
+    'disabled' => false,
+    'class' => '',
+])
+
 @php
 $type = $type ?? 'text';
 // id yang aman kalau wire:model berisi titik (.)
@@ -11,7 +21,7 @@ $inputId = str_replace('.', '_', $wireModel);
     <div class="relative">
         <input type="password" wire:model="{{ $wireModel }}" id="{{ $inputId }}" name="{{ $wireModel }}"
             placeholder="{{ $placeholder ?? '' }}" autocomplete="current-password"
-            {{ isset($required) && $required ? 'required' : '' }} class="pr-12">
+            {{ isset($required) && $required ? 'required' : '' }} class="pr-12" {{ isset($disabled) && $disabled ? 'readonly' : '' }}>
 
         <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-1"
             aria-label="Toggle password visibility"
@@ -26,7 +36,8 @@ $inputId = str_replace('.', '_', $wireModel);
     @else
     <input type="{{ $type }}" wire:model="{{ $wireModel }}" id="{{ $inputId }}" name="{{ $wireModel }}"
         placeholder="{{ $placeholder ?? '' }}"
-        {{ isset($required) && $required ? 'required' : '' }}>
+        class="{{ isset($disabled) && $disabled ? '!bg-gray-200 cursor-not-allowed' : '' }}"
+        {{ isset($required) && $required ? 'required' : '' }} {{ isset($disabled) && $disabled ? 'readonly' : '' }}>
     @endif
 
     @error($wireModel)

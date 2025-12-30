@@ -8,6 +8,6 @@ class Cart extends Component
 {
     public function render()
     {
-        return view('livewire.user.cart.cart');
+        return view('user.cart.cart')->extends('layouts.app')->section('content');
     }
 }

@@ -19,7 +19,6 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Factory validation: buat 1 record per model (ringan), dengan relasi terhubung.
-
         $this->call([
             // CategorySeeder::class,
             ProductSeeder::class,
@@ -36,22 +35,24 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Admin',
                 'email' => 'admin@example.com',
-                'foto' => 'user-placeholder.png',
+                'foto' => null,
+                'description' => null,
                 'password' => bcrypt('admin'),
-
             ],
 
             [
                 'name' => 'Vendor',
                 'email' => 'vendor@gmail.com',
-                'foto' => 'user-placeholder.png',
+                'foto' => null,
+                'description' => null,
                 'password' => bcrypt('vendor'),
             ],
 
             [
                 'name' => 'Customer',
                 'email' => 'customer@gmail.com',
-                'foto' => 'user-placeholder.png',
+                'foto' => null,
+                'description' => null,
                 'password' => bcrypt('customer'),
             ]
 

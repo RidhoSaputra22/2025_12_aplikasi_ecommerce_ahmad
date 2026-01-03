@@ -38,4 +38,16 @@ enum PaymentStatus: string implements HasColor, HasIcon, HasLabel
             self::Failed => 'heroicon-m-x-circle',
         };
     }
+
+    public static function asArray(): array
+    {
+        $array = [];
+        foreach (self::cases() as $case) {
+            $array[] = [
+                'label' => $case->getLabel(),
+                'value' => $case->value,
+            ];
+        }
+        return $array;
+    }
 }

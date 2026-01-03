@@ -16,6 +16,10 @@ class ProfilePage extends Component
     public string $email = '';
     public ?string $phone = null;
     public ?string $foto = null;
+    public ?string $description = "Has";
+
+    public int $tab = 1;
+
 
     public function getShipmentAddressesProperty(): Collection
     {
@@ -42,6 +46,7 @@ class ProfilePage extends Component
         $this->email = (string) $user->email;
         $this->phone = $user->phone;
         $this->foto = $user->foto;
+        $this->description = $user->description;
     }
 
     public function rules(): array
@@ -52,6 +57,7 @@ class ProfilePage extends Component
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
             'phone' => ['nullable', 'string', 'max:30'],
+            'description' => ['nullable', 'string'],
         ];
     }
 
@@ -69,6 +75,7 @@ class ProfilePage extends Component
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'],
+            'description' => $validated['description'],
         ]);
 
         $user->save();
@@ -76,6 +83,11 @@ class ProfilePage extends Component
         session()->flash('success', 'Profil berhasil diperbarui.');
 
         $this->dispatch('profile-updated');
+    }
+
+    public function changeTab(int $tab): void
+    {
+        $this->tab = $tab;
     }
 
     public function openShipmentAddressCreateModal(): void

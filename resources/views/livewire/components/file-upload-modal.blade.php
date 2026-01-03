@@ -20,7 +20,6 @@
             @if (!empty($accept)) accept="{{ $accept }}" @endif
             class="hidden"
         />
-
         @php
             $fileName = $file && method_exists($file, 'getClientOriginalName') ? (string) $file->getClientOriginalName() : null;
             $fileSize = $file && method_exists($file, 'getSize') ? (int) $file->getSize() : null;
@@ -30,7 +29,6 @@
                 $fileSizeLabel = $kb >= 1024 ? (number_format($kb / 1024, 1) . ' MB') : ($kb . ' KB');
             }
         @endphp
-
         <label for="file_input" class="block">
             <div
                 class="relative rounded-xl border border-gray-200 bg-white overflow-hidden transition-colors duration-200"
@@ -64,7 +62,6 @@
                         Lepaskan file untuk mengunggah
                     </div>
                 </div>
-
                 @if ($file)
                     <div class="relative">
                         <div class="aspect-16/6 bg-gray-100">
@@ -76,7 +73,6 @@
                                 </div>
                             @endif
                         </div>
-
                         <div class="absolute inset-x-0 top-0 p-4 text-white">
                             <div class="flex items-start justify-between gap-4">
                                 <div class="flex-1">
@@ -85,9 +81,6 @@
                                         <div class="text-xs opacity-80">{{ $fileSizeLabel }}</div>
                                     @endif
                                 </div>
-
-
-
                                 <template x-if="!uploading && finished">
                                     <div class="flex items-center justify-end gap-2">
                                         <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-500/90 animate-[pop_.25s_ease-out]">
@@ -95,21 +88,12 @@
                                                 <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-7.07 7.093a1 1 0 0 1-1.42 0L3.29 8.87a1 1 0 1 1 1.414-1.415l3.81 3.81 6.364-6.38a1 1 0 0 1 1.416.006Z" clip-rule="evenodd" />
                                             </svg>
                                         </span>
-
-
                                     </div>
                                 </template>
-
-
-
                             </div>
-
-
                         </div>
-
                         <div
                             class="absolute inset-x-0 top-0 h-12"
-
                         ></div>
                     </div>
                 @else
@@ -124,7 +108,6 @@
                 @endif
             </div>
         </label>
-
         <div x-show="uploading && !{{ $file ? 'true' : 'false' }}" class="-mt-2">
             <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
                 <div class="h-full rounded-full bg-primary transition-[width] duration-200 ease-out" x-bind:style="`width: ${progress}%;`"></div>
@@ -133,11 +116,9 @@
                 Mengunggah <span x-text="progress"></span>%
             </div>
         </div>
-
         @error('file')
             <div class="text-xs text-red-600">{{ $message }}</div>
         @enderror
-
         <button
             type="submit"
             wire:loading.attr="disabled"

@@ -10,6 +10,7 @@ use App\Models\Category;
 
 class Cari extends Component
 {
+
     use WithPagination, WithoutUrlPagination;
 
 

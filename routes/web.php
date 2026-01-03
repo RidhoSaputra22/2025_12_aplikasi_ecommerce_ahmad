@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/user/login', Login::class)->name('user.login');
+Route::get('/login', Login::class)->name('login');
 Route::get('/user/logout', function(){
     auth()->logout();
     return redirect()->route('welcome');

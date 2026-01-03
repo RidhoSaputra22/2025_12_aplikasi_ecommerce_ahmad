@@ -46,4 +46,15 @@ enum OrderStatus: string implements HasColor, HasIcon, HasLabel
             self::Cancelled => 'heroicon-m-x-circle',
         };
     }
+
+    public static function asArray(): array
+    {
+        return array_map(
+            fn (self $status) => [
+                'value' => $status->value,
+                'label' => $status->getLabel(),
+            ],
+            self::cases(),
+        );
+    }
 }

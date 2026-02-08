@@ -9,11 +9,17 @@
             <div class="">
                 <h1 class="text-5xl/loose">Login</h1>
                 <p class="text-lg font-light">Silakan masukkan email dan kata sandi Anda untuk masuk.</p>
+                <p class="text-sm text-gray-500 mt-1">Anda dapat login sebagai <strong>Customer</strong>, <strong>Vendor</strong>, atau <strong>Admin</strong>.</p>
             </div>
 
             <div>
+                @if (session()->has('message'))
+                <div class="p-3 rounded-lg border border-green-200 bg-green-50 text-green-700 mb-2">
+                    {{ session('message') }}
+                </div>
+                @endif
                 @if (session()->has('error'))
-                <div class="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 mb-6">
+                <div class="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 mb-2">
                     {{ session('error') }}
                 </div>
                 @endif
@@ -29,7 +35,7 @@
             @endcomponent
 
             @component('components.form.input', [
-            'label' => 'Kata Sandi',
+            'label' => 'Kata Sandi (minimal 8 karakter)',
             'type' => 'password',
             'wireModel' => 'password',
             'placeholder' => 'Masukkan kata sandi Anda',

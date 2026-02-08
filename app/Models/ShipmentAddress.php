@@ -25,8 +25,8 @@ class ShipmentAddress extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function shipment()
+    public function shipments()
     {
-        return $this->belongsTo(Shipment::class);
+        return $this->hasMany(Shipment::class);
     }
 }

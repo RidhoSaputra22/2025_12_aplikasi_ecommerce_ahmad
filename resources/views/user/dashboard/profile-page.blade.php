@@ -27,12 +27,37 @@
                     <img src="{{ asset('storage/' . $foto) }}" alt="Foto Profil"
                         class="w-16 h-16 rounded-full object-cover border" />
                     @else
-                    <div class="w-16 h-16 rounded-full border bg-gray-50"></div>
+                    <div class="w-16 h-16 rounded-full border bg-gray-50 flex items-center justify-center text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
+                    </div>
                     @endif
 
                     <div>
-                        <div class="font-semibold">Foto Profil</div>
-                        <div class="text-sm text-gray-500">Upload foto untuk akun Anda.</div>
+                        <div class="font-semibold text-lg">{{ $name }}</div>
+                        <div class="text-sm text-gray-500">{{ $email }}</div>
+                        @php
+                            $roleName = Auth::user()?->role?->name;
+                            $roleLabel = match($roleName) {
+                                'admin' => 'Administrator',
+                                'vendor' => 'Vendor / Penjual',
+                                'customer' => 'Customer / Pembeli',
+                                default => ucfirst($roleName ?? '-'),
+                            };
+                            $roleColor = match($roleName) {
+                                'admin' => 'bg-red-100 text-red-700',
+                                'vendor' => 'bg-blue-100 text-blue-700',
+                                'customer' => 'bg-green-100 text-green-700',
+                                default => 'bg-gray-100 text-gray-700',
+                            };
+                        @endphp
+                        <span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded {{ $roleColor }}">
+                            {{ $roleLabel }}
+                        </span>
+                        @if (Auth::user()?->last_login_at)
+                        <div class="text-xs text-gray-400 mt-1">
+                            Login terakhir: {{ Auth::user()->last_login_at->diffForHumans() }}
+                        </div>
+                        @endif
                     </div>
                 </div>
 

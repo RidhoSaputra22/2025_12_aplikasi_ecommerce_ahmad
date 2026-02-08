@@ -13,6 +13,9 @@ class Dashboard extends Component
     #[Url]
     public string $tab = 'profile';
 
+    #[Url]
+    public ?int $order_id = null;
+
     public function mount(): void
     {
         if (!Auth::check()) {
@@ -20,7 +23,7 @@ class Dashboard extends Component
             return;
         }
 
-        if (!in_array($this->tab, ['profile', 'history'], true)) {
+        if (!in_array($this->tab, ['profile', 'history', 'order-detail', 'notifications'], true)) {
             $this->tab = 'profile';
         }
     }

@@ -16,7 +16,6 @@ class Login extends Component
 
     public function login()
     {
-
         $this->validate();
 
         $credentials = [
@@ -27,17 +26,24 @@ class Login extends Component
         if (Auth::attempt($credentials)) {
             session()->regenerate();
 
-            if (Auth::user()->role == 'admin') {
-                dd('d');
+            // Update last login
+            Auth::user()->update(['last_login_at' => now()]);
 
+            $roleName = Auth::user()->role?->name;
+
+            if ($roleName === 'admin') {
+                session()->flash('login_role', 'Admin');
                 return redirect()->intended(route('filament.admin.pages.dashboard'));
             }
 
-            if (Auth::user()->role == 'vendor') {
+            if ($roleName === 'vendor') {
+                session()->flash('login_role', 'Vendor');
                 return redirect()->intended(route('filament.vendor.pages.dashboard'));
             }
 
-            return redirect()->intended('/');
+            // Customer
+            session()->flash('login_role', 'Customer');
+            return redirect()->intended(route('welcome'));
         }
 
         $this->addError('email', 'Email atau password salah.');

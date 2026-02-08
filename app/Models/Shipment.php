@@ -34,7 +34,7 @@ class Shipment extends Model
 
     public function shipmentAddress()
     {
-        return $this->hasOne(ShipmentAddress::class);
+        return $this->belongsTo(ShipmentAddress::class);
     }
 
     public function shipmentCourier()

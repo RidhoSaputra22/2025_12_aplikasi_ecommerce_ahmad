@@ -9,6 +9,7 @@ use Filament\Support\Contracts\HasLabel;
 enum OrderPaymentStatus: string implements HasColor, HasIcon, HasLabel
 {
     case Pending = 'pending';
+    case WaitingConfirmation = 'waiting_confirmation';
     case Paid = 'paid';
     case Failed = 'failed';
 
@@ -16,6 +17,7 @@ enum OrderPaymentStatus: string implements HasColor, HasIcon, HasLabel
     {
         return match ($this) {
             self::Pending => 'Menunggu Pembayaran',
+            self::WaitingConfirmation => 'Menunggu Konfirmasi Admin',
             self::Paid => 'Sudah Dibayar',
             self::Failed => 'Pembayaran Gagal',
         };
@@ -25,6 +27,7 @@ enum OrderPaymentStatus: string implements HasColor, HasIcon, HasLabel
     {
         return match ($this) {
             self::Pending => 'warning',
+            self::WaitingConfirmation => 'info',
             self::Paid => 'success',
             self::Failed => 'danger',
         };
@@ -34,8 +37,21 @@ enum OrderPaymentStatus: string implements HasColor, HasIcon, HasLabel
     {
         return match ($this) {
             self::Pending => 'heroicon-m-clock',
+            self::WaitingConfirmation => 'heroicon-m-document-check',
             self::Paid => 'heroicon-m-check-circle',
             self::Failed => 'heroicon-m-exclamation-circle',
         };
+    }
+
+    public static function asSelectArray(): array
+    {
+        $array = [];
+        foreach (self::cases() as $case) {
+            $array[] = [
+                'label' => $case->getLabel(),
+                'value' => $case->value,
+            ];
+        }
+        return $array;
     }
 }

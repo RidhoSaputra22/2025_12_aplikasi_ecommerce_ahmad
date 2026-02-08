@@ -16,8 +16,14 @@ class Regist extends Component
     #[Validate('required|email|unique:users,email', message: 'Email harus diisi, valid, dan belum terdaftar.')]
     public string $email = '';
 
+    #[Validate('nullable|string|max:20')]
+    public string $phone = '';
+
     #[Validate('required|min:8', message: 'Kata sandi harus diisi dan minimal 8 karakter.')]
     public string $password = '';
+
+    #[Validate('required|in:customer,vendor', message: 'Pilih peran akun Anda.')]
+    public string $role = 'customer';
 
     public function regist()
     {
@@ -31,18 +37,21 @@ class Regist extends Component
         $user = User::create([
             'name' => $this->nama,
             'email' => $this->email,
+            'phone' => $this->phone ?: null,
             'password' => bcrypt($this->password),
         ]);
 
-        $userRole = Role::where('name', 'user')->first();
+        $userRole = Role::where('name', $this->role)->first();
 
-        UserRole::create([
-            'user_id' => $user->id,
-            'role_id' => $userRole->id,
-        ]);
+        if ($userRole) {
+            UserRole::create([
+                'user_id' => $user->id,
+                'role_id' => $userRole->id,
+            ]);
+        }
 
-        // Setelah pendaftaran berhasil, arahkan pengguna ke halaman lain
-        session()->flash('message', 'Pendaftaran berhasil! Silakan login.');
+        $roleLabel = $this->role === 'vendor' ? 'Vendor' : 'Customer';
+        session()->flash('message', 'Pendaftaran berhasil sebagai ' . $roleLabel . '! Silakan login.');
 
         return redirect()->route('user.login');
     }

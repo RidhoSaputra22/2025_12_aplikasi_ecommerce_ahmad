@@ -17,16 +17,25 @@ class Payment extends Model
         'amount',
         'status',
         'transaction_reference',
-        'paid_at'
+        'payment_proof',
+        'paid_at',
+        'confirmed_at',
+        'confirmed_by',
     ];
 
     protected $casts = [
         'status' => PaymentStatus::class,
         'paid_at' => 'datetime',
+        'confirmed_at' => 'datetime',
     ];
 
     public function order()
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function confirmedByUser()
+    {
+        return $this->belongsTo(User::class, 'confirmed_by');
     }
 }

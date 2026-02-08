@@ -86,8 +86,14 @@
                                         </path>
                                     </svg>
                                 </button>
-                                <input type="text" value="{{ $quantity }}"
-                                    class="w-16 h-10 text-center border  rounded-lg  appearance-none " readonly />
+
+                                <select wire:model.live="quantity"
+                                    class="w-20 h-10 text-center border rounded-lg appearance-none bg-white cursor-pointer focus:border-primary focus:ring-1 focus:ring-primary">
+                                    @for ($i = 1; $i <= min($selectedVariant?->stock ?? 10, 100); $i++)
+                                        <option value="{{ $i }}">{{ $i }}</option>
+                                        @endfor
+                                </select>
+
                                 <button type="button" wire:click="incrementQuantity" wire:loading.attr="disabled"
                                     class="w-10 h-10 border  rounded-lg flex items-center justify-center   cursor-pointer hover:border-primary">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,14 +159,13 @@
         <div class="flex-1 w-1/2 space-y-5">
             <h1 class="text-2xl/loose font-semibold">Produk Lainnya dari toko ini</h1>
 
-            <div class="swiper vendorProducts  " data-aos="fade-up" >
+            <div class="swiper vendorProducts  " data-aos="fade-up">
                 <div class="swiper-wrapper ">
                     @foreach ($product->vendor->products as $key => $product)
                     <a href="{{ route('produk.detail', ['slug' => $product->slug]) }}" class="swiper-slide "
                         wire:key="product-{{ $product->id }}">
                         <div class="relative w-full aspect-4/3 overflow-hidden rounded-xl">
-                            <img src="{{ asset('images/product-paceholder.jpg') }}"
-                                class="w-full h-full object-cover">
+                            <img src="{{ asset('images/product-paceholder.jpg') }}" class="w-full h-full object-cover">
 
                             <span
                                 class="absolute top-2 left-2 bg-primary px-3 py-1 rounded-md text-xs font-medium text-white">

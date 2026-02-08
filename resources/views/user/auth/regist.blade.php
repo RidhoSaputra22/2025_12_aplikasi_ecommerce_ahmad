@@ -4,45 +4,68 @@
             <h1 class="text-2xl/tight font-semibold">Toko Desa</h1>
             <p class="text-lg font-light">Melayani Sejak 2010</p>
         </div>
-        <form action="" class="mt-30 space-y-6 max-w-xl mx-auto" wire:submit.prevent="regist">
+        <form action="" class="mt-20 space-y-6 max-w-xl mx-auto" wire:submit.prevent="regist">
 
             <div class="">
                 <h1 class="text-5xl/loose">Register</h1>
-                <p class="text-lg font-light">Silakan masukkan email dan kata sandi Anda untuk mendaftar.</p>
+                <p class="text-lg font-light">Lengkapi data diri Anda untuk mendaftar akun baru.</p>
+            </div>
+
+            <div class="flex gap-5">
+                @component('components.form.input', [
+                'label' => 'Nama Lengkap',
+                'type' => 'text',
+                'wireModel' => 'nama',
+                'placeholder' => 'Masukkan nama lengkap Anda',
+                'required' => true,
+
+                ])
+                @endcomponent
+
+                @component('components.form.input', [
+                'label' => 'Email',
+                'type' => 'email',
+                'wireModel' => 'email',
+                'placeholder' => 'Masukkan email Anda',
+                'required' => true,
+                ])
+                @endcomponent
             </div>
 
             @component('components.form.input', [
-            'label' => 'Nama Lengkap',
+            'label' => 'No. Telepon',
             'type' => 'text',
-            'wireModel' => 'nama',
-            'placeholder' => 'Masukkan nama lengkap Anda',
-            'required' => true,
-
+            'wireModel' => 'phone',
+            'placeholder' => 'Masukkan nomor telepon Anda',
+            'required' => false,
             ])
             @endcomponent
 
-
-
-            @component('components.form.input', [
-            'label' => 'Email',
-            'type' => 'email',
-            'wireModel' => 'email',
-            'placeholder' => 'Masukkan email Anda',
-            'required' => true,
+            @component('components.form.select', [
+            'label' => 'Daftar Sebagai',
+            'wireModel' => 'role',
+            'options' => [
+            ['label' => 'Customer (Pembeli)', 'value' => 'customer'],
+            ['label' => 'Vendor (Penjual)', 'value' => 'vendor'],
+            ],
+            'default' => [
+            'label' => '-- Pilih Peran --',
+            'value' => '',
+            ],
             ])
             @endcomponent
 
             @component('components.form.input', [
-            'label' => 'Kata Sandi',
+            'label' => 'Kata Sandi (minimal 8 karakter)',
             'type' => 'password',
             'wireModel' => 'password',
-            'placeholder' => 'Masukkan kata sandi Anda',
+            'placeholder' => 'Masukkan kata sandi minimal 8 karakter',
             'required' => true,
             ])
 
             @endcomponent
             @component('components.form.button', [
-            'label' => 'Masuk',
+            'label' => 'Daftar',
             'class' => 'w-full bg-primary text-white',
             'wireLoadingTarget' => 'regist',
             'wireLoadingClass' => 'opacity-70 cursor-not-allowed',

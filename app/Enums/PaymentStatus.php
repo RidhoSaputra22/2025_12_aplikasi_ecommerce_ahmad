@@ -9,13 +9,15 @@ use Filament\Support\Contracts\HasLabel;
 enum PaymentStatus: string implements HasColor, HasIcon, HasLabel
 {
     case Pending = 'pending';
+    case WaitingConfirmation = 'waiting_confirmation';
     case Success = 'success';
     case Failed = 'failed';
 
     public function getLabel(): string
     {
         return match ($this) {
-            self::Pending => 'Menunggu',
+            self::Pending => 'Menunggu Pembayaran',
+            self::WaitingConfirmation => 'Menunggu Konfirmasi',
             self::Success => 'Berhasil',
             self::Failed => 'Gagal',
         };
@@ -25,6 +27,7 @@ enum PaymentStatus: string implements HasColor, HasIcon, HasLabel
     {
         return match ($this) {
             self::Pending => 'warning',
+            self::WaitingConfirmation => 'info',
             self::Success => 'success',
             self::Failed => 'danger',
         };
@@ -34,6 +37,7 @@ enum PaymentStatus: string implements HasColor, HasIcon, HasLabel
     {
         return match ($this) {
             self::Pending => 'heroicon-m-clock',
+            self::WaitingConfirmation => 'heroicon-m-document-check',
             self::Success => 'heroicon-m-check-circle',
             self::Failed => 'heroicon-m-x-circle',
         };

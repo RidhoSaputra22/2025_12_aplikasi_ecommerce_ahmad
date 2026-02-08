@@ -9,7 +9,10 @@
         <div class="flex-3">
             @if ($tab === 'history')
                 @livewire('user.dashboard.history-page')
-
+            @elseif ($tab === 'order-detail' && $order_id)
+                @livewire('user.dashboard.order-detail-page', ['orderId' => $order_id], key('order-' . $order_id))
+            @elseif ($tab === 'notifications')
+                @livewire('user.dashboard.notification-page')
             @else
                 @livewire('user.dashboard.profile-page')
             @endif

@@ -11,6 +11,7 @@ class Navbar extends Component
     protected $listeners = [
         'cart-updated-nav' => '$refresh',
         'cart-updated' => '$refresh',
+        'payment-proof:uploaded' => '$refresh',
     ];
 
      public function getCartCountProperty()
@@ -26,6 +27,14 @@ class Navbar extends Component
             ?->count() ?? 0;
     }
 
+    public function getUnreadNotificationCountProperty(): int
+    {
+        if (!auth()->check()) {
+            return 0;
+        }
+
+        return auth()->user()->unreadNotifications()->count();
+    }
 
 
 

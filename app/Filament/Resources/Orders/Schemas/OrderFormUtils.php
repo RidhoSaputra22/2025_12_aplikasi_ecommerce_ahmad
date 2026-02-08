@@ -32,10 +32,10 @@ class OrderFormUtils
         }
 
         $set('total_amount', $total + $shippingCost);
-        $set('total_amount_pembayaran_display', "Rp " . number_format((int)($total + $shippingCost), 2, ',', '.'));
+        $set('total_amount_pembayaran_display', 'Rp '.number_format((int) ($total + $shippingCost), 2, ',', '.'));
         $set('shipping_cost', $shippingCost);
-        $set('shipping_cost_display', "Rp " . number_format((int)$shippingCost, 2, ',', '.'));
-        $set('total_amount_display', "Rp " . number_format((int)$total, 2, ',', '.'));
+        $set('shipping_cost_display', 'Rp '.number_format((int) $shippingCost, 2, ',', '.'));
+        $set('total_amount_display', 'Rp '.number_format((int) $total, 2, ',', '.'));
     }
 
     // calculate shipping cost based on courier and service
@@ -44,7 +44,7 @@ class OrderFormUtils
         $courier = ShipmentCourier::find($state);
         if ($courier) {
             $set('shipping_cost', $courier->price);
-            $set('shipping_cost_display', "Rp " . number_format((int)$courier->price, 2, ',', '.'));
+            $set('shipping_cost_display', 'Rp '.number_format((int) $courier->price, 2, ',', '.'));
 
             // Update total amount
             $items = $get('items') ?? [];
@@ -55,13 +55,11 @@ class OrderFormUtils
                     $total += $variant->price * $item['quantity'];
                 }
             }
-            $set('total_amount_display', "Rp " . number_format((int)$total, 2, ',', '.'));
-            $set('total_amount_pembayaran_display', "Rp " . number_format((int)($total + $courier->price), 2, ',', '.'));
+            $set('total_amount_display', 'Rp '.number_format((int) $total, 2, ',', '.'));
+            $set('total_amount_pembayaran_display', 'Rp '.number_format((int) ($total + $courier->price), 2, ',', '.'));
             $set('total_amount', $total += $courier->price);
         }
     }
-
-
 
     // customer schema
     public static function customerSchema(): array
@@ -80,6 +78,9 @@ class OrderFormUtils
                     TextInput::make('phone')
                         ->tel(),
                     TextInput::make('password')
+                        ->minLength(8)
+                        ->password()
+                        ->revealable()
                         ->required(),
                 ])
                 ->columns(2),
@@ -106,7 +107,6 @@ class OrderFormUtils
                 ])
 
                 ->columns(3),
-
 
         ];
     }

@@ -23,7 +23,9 @@ class UserForm
                 TextInput::make('phone')
                     ->tel(),
                 TextInput::make('password')
+                    ->minLength(8)
                     ->password()
+                    ->revealable()
                     ->visibleOn('create')
                     ->required(),
                 DateTimePicker::make('email_verified_at'),

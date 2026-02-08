@@ -2,15 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\Role;
 use App\Models\Shipment;
 use App\Models\ShipmentAddress;
 use App\Models\ShipmentCourier;
 use App\Models\User;
 use App\Models\UserRole;
-
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -35,7 +34,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'admin@gmail.com',
                 'foto' => null,
                 'description' => null,
-                'password' => bcrypt('admin'),
+                'password' => bcrypt('password'),
             ],
 
             [
@@ -43,7 +42,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'vendor@gmail.com',
                 'foto' => null,
                 'description' => null,
-                'password' => bcrypt('vendor'),
+                'password' => bcrypt('password'),
             ],
 
             [
@@ -51,8 +50,8 @@ class DatabaseSeeder extends Seeder
                 'email' => 'customer@gmail.com',
                 'foto' => null,
                 'description' => null,
-                'password' => bcrypt('customer'),
-            ]
+                'password' => bcrypt('password'),
+            ],
 
         ]);
 
@@ -68,10 +67,8 @@ class DatabaseSeeder extends Seeder
             [
                 'user_id' => 3,
                 'role_id' => 3,
-            ]
+            ],
         ]);
-
-
 
         Shipment::factory(5)->create();
 
@@ -83,11 +80,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-
-
-
-
-         $this->call([
+        $this->call([
             CategorySeeder::class,
             ProductSeeder::class,
             ReviewSeeder::class,

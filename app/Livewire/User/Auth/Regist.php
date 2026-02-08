@@ -4,19 +4,19 @@ namespace App\Livewire\User\Auth;
 
 use App\Models\Role;
 use App\Models\User;
-use Livewire\Component;
 use App\Models\UserRole;
 use Livewire\Attributes\Validate;
+use Livewire\Component;
 
 class Regist extends Component
 {
-
     #[Validate('required|min:3', message: 'Nama lengkap harus diisi dan minimal 3 karakter.')]
     public string $nama = '';
 
     #[Validate('required|email|unique:users,email', message: 'Email harus diisi, valid, dan belum terdaftar.')]
     public string $email = '';
-    #[Validate('required|min:6', message: 'Kata sandi harus diisi dan minimal 6 karakter.')]
+
+    #[Validate('required|min:8', message: 'Kata sandi harus diisi dan minimal 8 karakter.')]
     public string $password = '';
 
     public function regist()
@@ -41,9 +41,9 @@ class Regist extends Component
             'role_id' => $userRole->id,
         ]);
 
-
         // Setelah pendaftaran berhasil, arahkan pengguna ke halaman lain
         session()->flash('message', 'Pendaftaran berhasil! Silakan login.');
+
         return redirect()->route('user.login');
     }
 

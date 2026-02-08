@@ -10,7 +10,7 @@ class Login extends Component
 {
     #[Validate('required|email', message: 'Email harus diisi dan harus berupa alamat email yang valid.')]
     public string $email = '';
-    #[Validate('required|min:6', message: 'Kata sandi harus diisi dan minimal 6 karakter.')]
+    #[Validate('required', message: 'Kata sandi harus diisi dan minimal 6 karakter.')]
     public string $password = '';
 
     public function login()

@@ -3,12 +3,14 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Filament\Panel;
+use App\Enums\UserStatus;
+use Illuminate\Notifications\Notifiable;
+use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use App\Enums\UserStatus;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
 
     use HasFactory, Notifiable;
@@ -30,9 +32,29 @@ class User extends Authenticatable
         'last_login_at' => 'datetime',
     ];
 
+    public function canAccessPanel(Panel $panel): bool
+    {
+        if(($panel->getId() === 'vendor')){
+            return $this->role && in_array($this->role->name, ['vendor']);
+        }
+
+        if(($panel->getId() === 'admin')){
+            return $this->role && in_array($this->role->name, ['admin']);
+        }
+
+        return false;
+
+
+
+    }
+
     public function userRoles()
     {
         return $this->hasOne(UserRole::class);
+    }
+
+    public function role(){
+        return $this->hasOneThrough(Role::class, UserRole::class, 'user_id', 'id', 'id', 'role_id');
     }
 
     public function vendor()

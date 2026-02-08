@@ -31,6 +31,7 @@ class ProductsTable
                 TextColumn::make('price')
                     ->label('Harga')
                     ->money('IDR')
+                    ->searchable()
                     ->sortable(),
                 TextColumn::make('weight')
                     ->label('Berat (gram)')

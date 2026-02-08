@@ -5,6 +5,9 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\Role;
+use App\Models\Shipment;
+use App\Models\ShipmentAddress;
+use App\Models\ShipmentCourier;
 use App\Models\User;
 use App\Models\UserRole;
 
@@ -19,22 +22,17 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Factory validation: buat 1 record per model (ringan), dengan relasi terhubung.
-        $this->call([
-            // CategorySeeder::class,
-            ProductSeeder::class,
-            // ReviewSeeder::class,
-        ]);
 
         Role::insert([
             ['name' => 'admin'],
             ['name' => 'vendor'],
-            ['name' => 'user'],
+            ['name' => 'customer'],
         ]);
 
         User::insert([
             [
                 'name' => 'Admin',
-                'email' => 'admin@example.com',
+                'email' => 'admin@gmail.com',
                 'foto' => null,
                 'description' => null,
                 'password' => bcrypt('admin'),
@@ -72,5 +70,28 @@ class DatabaseSeeder extends Seeder
                 'role_id' => 3,
             ]
         ]);
+
+
+
+        Shipment::factory(5)->create();
+
+        ShipmentCourier::factory(3)->create();
+
+        ShipmentAddress::factory(10)->create(
+            [
+                'user_id' => 3,
+            ]
+        );
+
+
+
+
+
+         $this->call([
+            CategorySeeder::class,
+            ProductSeeder::class,
+            ReviewSeeder::class,
+        ]);
+
     }
 }

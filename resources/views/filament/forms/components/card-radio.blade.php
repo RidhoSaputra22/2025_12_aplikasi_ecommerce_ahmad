@@ -8,21 +8,22 @@
         @endphp
 
         <label @click="state = @js($value)"
-            class="flex items-start justify-between gap-4 p-4 border rounded-xl cursor-pointer transition" :class="state == @js($value)
-                    ? 'border-primary-600 bg-primary-50'
-                    : 'border-gray-300 bg-white hover:border-gray-400'">
+            class="flex items-start justify-between gap-4 p-4 border rounded-xl cursor-pointer transition"
+            :class="state == @js($value)
+                ? 'border-primary-600 bg-primary-50 dark:border-primary-500 dark:bg-primary-950/40'
+                : 'border-gray-300 bg-white hover:border-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-gray-600'">
             {{-- Hidden native radio --}}
             <input type="radio" :value="@js($value)" x-model="state" class="sr-only" />
 
             {{-- Left content --}}
             <div class="space-y-1">
-                <div class="font-medium text-gray-900">
+                <div class="font-medium text-gray-900 dark:text-gray-100">
                     {{ $label }}
                 </div>
 
 
                 @if ($description)
-                <div class="text-sm text-gray-500">
+                <div class="text-sm text-gray-500 dark:text-gray-400">
                     {{ $description }}
                 </div>
                 @endif
@@ -30,8 +31,8 @@
 
             {{-- Right indicator --}}
             <div class="mt-1 flex h-5 w-5 items-center justify-center rounded-full border" :class="state == @js($value)
-                        ? 'border-primary-600'
-                        : 'border-gray-300'">
+                        ? 'border-primary-600 dark:border-primary-500'
+                        : 'border-gray-300 dark:border-gray-700'">
                 <div class="h-2.5 w-2.5 rounded-full bg-primary-600" x-show="state == @js($value)" x-transition></div>
             </div>
         </label>

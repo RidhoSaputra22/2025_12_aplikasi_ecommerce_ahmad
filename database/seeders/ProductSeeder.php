@@ -37,7 +37,7 @@ class ProductSeeder extends Seeder
                 ->has(
                     ProductVariant::factory()->count(1)
                 )
-                ->has(Review::factory()->count(30))
+
 
             )
             ->create([

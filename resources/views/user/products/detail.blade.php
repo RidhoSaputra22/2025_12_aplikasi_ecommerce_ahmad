@@ -11,8 +11,9 @@
                     <!-- Product Images -->
                     <div class="flex-1 space-y-4 relative">
                         <!-- Main Image -->
-                        <img src="{{ Storage::url($productImages->first()?->image) }}" alt="Produk"
-                            class="w-full h-full object-cover object-center rounded-2xl">
+
+                        <img src="{{ Storage::url($productImages->first()?->image ?? 'products/product_placeholder.jpg') }}"
+                            alt="Produk" class="w-full h-full object-cover object-center rounded-2xl">
 
                         <!-- Thumbnail Images -->
                         <div class="grid grid-cols-4 gap-2 absolute bottom-4 right-4 left-4">

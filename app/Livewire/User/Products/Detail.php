@@ -3,27 +3,25 @@
 namespace App\Livewire\User\Products;
 
 use App\Models\Cart;
-use App\Models\Product;
-use Livewire\Component;
 use App\Models\CartItem;
+use App\Models\Product;
 use App\Models\ProductVariant;
-use Livewire\Attributes\Layout;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Livewire\Component;
 
 class Detail extends Component
 {
-
     public ?string $slug = null;
+
     public int $quantity = 1;
+
     public ?int $selectedVariantId = null;
 
     public function mount(string $slug): void
     {
         $this->slug = $slug;
     }
-
-
 
     public function selectVariant(int $variantId): void
     {
@@ -39,6 +37,7 @@ class Detail extends Component
             $stock = (int) ProductVariant::query()->where('id', $this->selectedVariantId)->value('stock');
             if ($stock > 0) {
                 $this->quantity = min($current + 1, $stock);
+
                 return;
             }
         }
@@ -59,7 +58,7 @@ class Detail extends Component
     public function addToCart()
     {
         // return sleep(2);
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('user.login');
         }
 
@@ -68,8 +67,9 @@ class Detail extends Component
         $variantId = $this->selectedVariantId
             ?? $product->productVariants()->orderBy('id')->value('id');
 
-        if (!$variantId) {
+        if (! $variantId) {
             $this->addError('selectedVariantId', 'Variant tidak tersedia.');
+
             return;
         }
 
@@ -79,8 +79,9 @@ class Detail extends Component
             ->where('product_id', $product->id)
             ->first();
 
-        if (!$variant) {
+        if (! $variant) {
             $this->addError('selectedVariantId', 'Variant tidak valid.');
+
             return;
         }
 
@@ -103,6 +104,7 @@ class Detail extends Component
 
             if ($newQty > (int) $variant->stock) {
                 $this->addError('quantity', 'Stok tidak mencukupi untuk jumlah yang dipilih.');
+
                 return;
             }
 
@@ -120,15 +122,10 @@ class Detail extends Component
 
         $this->dispatch('cart-updated-nav');
 
-
-
-        if (!$this->getErrorBag()->has('quantity')) {
+        if (! $this->getErrorBag()->has('quantity')) {
             session()->flash('success', 'Produk berhasil dimasukkan ke keranjang.');
         }
     }
-
-
-
 
     public function render()
     {
@@ -145,6 +142,8 @@ class Detail extends Component
 
         $selectedVariant = $productVariants->firstWhere('id', $this->selectedVariantId)
             ?? $productVariants->first();
+
+        // dd($product);
 
         return view('user.products.detail', compact('product', 'productImages', 'reviews', 'productVariants', 'selectedVariant'))
             ->extends('layouts.app');

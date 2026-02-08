@@ -45,6 +45,7 @@
         <div class="flex  justify-between   rounded-lg">
             <div class="flex items-start gap-4">
                 <div class="h-40 aspect-square bg-gray-100 rounded-lg overflow-hidden shrink-0">
+
                     <img src="{{ Storage::url($image?->image ?? 'products/product_placeholder.jpg') }}" alt="Produk"
                         class="w-full h-full object-cover">
                 </div>

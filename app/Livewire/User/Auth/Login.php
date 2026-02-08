@@ -27,6 +27,16 @@ class Login extends Component
         if (Auth::attempt($credentials)) {
             session()->regenerate();
 
+            if (Auth::user()->role == 'admin') {
+                dd('d');
+
+                return redirect()->intended(route('filament.admin.pages.dashboard'));
+            }
+
+            if (Auth::user()->role == 'vendor') {
+                return redirect()->intended(route('filament.vendor.pages.dashboard'));
+            }
+
             return redirect()->intended('/');
         }
 

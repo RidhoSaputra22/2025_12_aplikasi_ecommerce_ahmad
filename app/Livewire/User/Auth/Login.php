@@ -2,6 +2,7 @@
 
 namespace App\Livewire\User\Auth;
 
+use App\Models\Vendor;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -37,7 +38,7 @@ class Login extends Component
                 return redirect()->intended(route('filament.admin.pages.dashboard'));
             }
 
-            if ($roleName === 'vendor') {
+            if ($roleName === 'vendor' && Vendor::where('user_id', Auth::id())->exists()) {
                 session()->flash('login_role', 'Vendor');
                 // dd($roleName);
 

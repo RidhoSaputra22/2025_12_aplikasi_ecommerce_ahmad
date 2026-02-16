@@ -3,12 +3,12 @@
 namespace App\Filament\Resources\Vendors\Schemas;
 
 use Filament\Forms\Components\FileUpload;
-use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 class VendorForm
 {
@@ -22,13 +22,23 @@ class VendorForm
                         FileUpload::make('logo')
                             ->label('Logo')
                             ->image()
+                            ->imageEditor()
                             ->required()
+                            ->disk('public')
+                            ->visibility('public')
+                            ->directory('branding')
                             ->columnSpan(1),
+
                         FileUpload::make('banner')
                             ->label('Banner')
                             ->image()
+                            ->imageEditor()
                             ->required()
+                            ->disk('public')
+                            ->visibility('public')
+                            ->directory('branding')
                             ->columnSpan(4),
+
                     ])
                     ->columns(5)
                     ->columnSpanFull(),

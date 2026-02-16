@@ -29,8 +29,8 @@ class Dashboard extends Component
 
         $vendor = Auth::user()->vendor;
         if (! $vendor) {
-            dd('Vendor not found for the authenticated user.');
-            $this->redirectRoute('user.dashboard');
+            // dd('Vendor not found for the authenticated user.');
+            $this->redirectRoute('user.login');
 
             return;
         }

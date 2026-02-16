@@ -100,8 +100,9 @@ return request()->routeIs($patterns);
                 <div>
                     <div class="border-b border-gray-400">
                         <div class="flex gap-3 items-center mb-3  mx-4 my-3">
-                            <img src="{{ Storage::url(auth()->user()->foto ?? 'user-placeholder.png') }}" alt=""
-                                class="size-13 aspect-square object-cover rounded-full ">
+
+                            <img src="{{ Storage::url(auth()->user()->vendor?->logo ?? 'user-placeholder.png') }}"
+                                alt="" class="size-13 aspect-square object-cover rounded-full ">
                             <div>
                                 <h1 class="text-lg/tight font-semibold">{{ auth()->user()->name }}</h1>
                                 <span class="text-sm/tight font-light text-gray-500">{{ auth()->user()->email }}</span>

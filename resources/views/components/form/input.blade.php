@@ -1,11 +1,12 @@
 @props([
-    'label' => '',
-    'wireModel',
-    'type' => 'text',
-    'placeholder' => '',
-    'required' => false,
-    'disabled' => false,
-    'class' => '',
+'label' => '',
+'wireModel',
+'type' => 'text',
+'placeholder' => '',
+'required' => false,
+'disabled' => false,
+'class' => '',
+'live' => false,
 ])
 
 @php
@@ -19,9 +20,10 @@ $inputId = str_replace('.', '_', $wireModel);
 
     @if($type === 'password')
     <div class="relative">
-        <input type="password" wire:model="{{ $wireModel }}" id="{{ $inputId }}" name="{{ $wireModel }}"
-            placeholder="{{ $placeholder ?? '' }}" autocomplete="current-password"
-            {{ isset($required) && $required ? 'required' : '' }} class="pr-12" {{ isset($disabled) && $disabled ? 'readonly' : '' }}>
+        <input type="password" wire:{{ $live ? 'model.live' : 'model' }}="{{ $wireModel }}" id="{{ $inputId }}"
+            name="{{ $wireModel }}" placeholder="{{ $placeholder ?? '' }}" autocomplete="current-password"
+            {{ isset($required) && $required ? 'required' : '' }} class="pr-12"
+            {{ isset($disabled) && $disabled ? 'readonly' : '' }}>
 
         <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 p-1"
             aria-label="Toggle password visibility"
@@ -34,8 +36,8 @@ $inputId = str_replace('.', '_', $wireModel);
         </button>
     </div>
     @else
-    <input type="{{ $type }}" wire:model="{{ $wireModel }}" id="{{ $inputId }}" name="{{ $wireModel }}"
-        placeholder="{{ $placeholder ?? '' }}"
+    <input type="{{ $type }}" wire:{{ $live ? 'model.live' : 'model' }}="{{ $wireModel }}" id="{{ $inputId }}"
+        name="{{ $wireModel }}" placeholder="{{ $placeholder ?? '' }}"
         class="{{ isset($disabled) && $disabled ? '!bg-gray-200 cursor-not-allowed' : '' }}"
         {{ isset($required) && $required ? 'required' : '' }} {{ isset($disabled) && $disabled ? 'readonly' : '' }}>
     @endif

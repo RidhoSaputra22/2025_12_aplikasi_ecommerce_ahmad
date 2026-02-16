@@ -15,17 +15,16 @@ class CheckVendorRole
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Allow the vendor authentication endpoints to be accessed without the vendor role
-        // to avoid redirect loops (ERR_TOO_MANY_REDIRECTS).
-        if ($request->routeIs('filament.vendor.auth.*')) {
+        // Allow access to the regular login page to avoid redirect loops
+        if ($request->routeIs('login')) {
             return $next($request);
         }
 
         $user = $request->user();
 
-        // Guests should be redirected to the vendor login page.
+        // Guests should be redirected to the login page.
         if (! $user) {
-            return redirect()->route('filament.vendor.auth.login');
+            return redirect()->route('login');
         }
 
         // Only vendors can access protected vendor routes.

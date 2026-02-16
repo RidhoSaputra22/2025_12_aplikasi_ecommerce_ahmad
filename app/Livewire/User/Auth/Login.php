@@ -33,16 +33,20 @@ class Login extends Component
 
             if ($roleName === 'admin') {
                 session()->flash('login_role', 'Admin');
+
                 return redirect()->intended(route('filament.admin.pages.dashboard'));
             }
 
             if ($roleName === 'vendor') {
                 session()->flash('login_role', 'Vendor');
-                return redirect()->intended(route('filament.vendor.pages.dashboard'));
+                // dd($roleName);
+
+                return redirect()->intended(route('vendor.dashboard'));
             }
 
             // Customer
             session()->flash('login_role', 'Customer');
+
             return redirect()->intended(route('welcome'));
         }
 

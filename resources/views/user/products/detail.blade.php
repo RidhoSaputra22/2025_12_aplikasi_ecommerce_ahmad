@@ -37,6 +37,11 @@
                             {{ session('success') }}
                         </div>
                         @endif
+                        @if (session('error'))
+                        <div class="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700">
+                            {{ session('error') }}
+                        </div>
+                        @endif
 
                         <a href="{{ route('produk.cari', ['category' => $product->category->slug]) }}"
                             class="flex justify-between items-center ">
@@ -166,7 +171,8 @@
                     <a href="{{ route('produk.detail', ['slug' => $product->slug]) }}" class="swiper-slide "
                         wire:key="product-{{ $product->id }}">
                         <div class="relative w-full aspect-4/3 overflow-hidden rounded-xl">
-                            <img src="{{ asset('images/product-paceholder.jpg') }}" class="w-full h-full object-cover">
+                            <img src="{{ Storage::url($productImages->first()?->image ?? 'products/product_placeholder.jpg') }}"
+                                class="w-full h-full object-cover">
 
                             <span
                                 class="absolute top-2 left-2 bg-primary px-3 py-1 rounded-md text-xs font-medium text-white">

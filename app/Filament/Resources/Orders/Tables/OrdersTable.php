@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Orders\Tables;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\VendorWalletTransactionType;
+use App\Models\VendorWallet;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -13,6 +15,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class OrdersTable
@@ -20,6 +23,7 @@ class OrdersTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['orderVendors.vendor.vendorBankAccounts']))
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Customer')
@@ -42,6 +46,16 @@ class OrdersTable
                     ->label('Bukti Bayar')
                     ->formatStateUsing(fn ($state) => $state ? '✅ Ada' : '❌ Belum')
                     ->color(fn ($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('disbursement_status')
+                    ->label('Pencairan')
+                    ->getStateUsing(function ($record) {
+                        $total = $record->orderVendors->count();
+                        $disbursed = $record->orderVendors->where('is_disbursed', true)->count();
+                        if ($total === 0) return '-';
+                        if ($disbursed === $total) return '✅ Semua';
+                        if ($disbursed > 0) return "⏳ {$disbursed}/{$total}";
+                        return '❌ Belum';
+                    }),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -127,6 +141,80 @@ class OrdersTable
                                 'order_number' => $record->order_number,
                             ]),
                         ]);
+                    }),
+                Action::make('disburse_to_vendors')
+                    ->label('Cairkan ke Vendor')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('success')
+                    ->visible(function ($record) {
+                        // Show only when order is completed and has undisbursed vendors
+                        if ($record->status !== OrderStatus::Completed) {
+                            return false;
+                        }
+                        return $record->orderVendors->where('is_disbursed', false)->count() > 0;
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Cairkan Dana ke Vendor')
+                    ->modalDescription(function ($record) {
+                        $vendors = $record->orderVendors->where('is_disbursed', false);
+                        $lines = ['Pesanan: '.$record->order_number, '', 'Vendor yang akan dicairkan:'];
+                        foreach ($vendors as $ov) {
+                            $vendorName = $ov->vendor?->store_name ?? 'Vendor #'.$ov->vendor_id;
+                            $bankInfo = '';
+                            $bankAccount = $ov->vendor?->vendorBankAccounts()?->where('is_active', true)->first();
+                            if ($bankAccount) {
+                                $bankInfo = " ({$bankAccount->bank_name} - {$bankAccount->account_number} a.n. {$bankAccount->account_holder})";
+                            }
+                            $lines[] = "• {$vendorName}: Rp ".number_format((float) $ov->subtotal, 0, ',', '.').$bankInfo;
+                        }
+                        return implode("\n", $lines);
+                    })
+                    ->action(function ($record) {
+                        DB::transaction(function () use ($record) {
+                            $undisbursedVendors = $record->orderVendors()->where('is_disbursed', false)->get();
+
+                            foreach ($undisbursedVendors as $orderVendor) {
+                                // Get or create vendor wallet
+                                $wallet = VendorWallet::firstOrCreate(
+                                    ['vendor_id' => $orderVendor->vendor_id],
+                                    ['balance' => 0]
+                                );
+
+                                // Add credit transaction
+                                $wallet->transactions()->create([
+                                    'type' => VendorWalletTransactionType::Credit->value,
+                                    'amount' => $orderVendor->subtotal,
+                                    'description' => 'Pencairan dari pesanan #'.$record->order_number,
+                                    'reference_id' => 'ORDER-'.$record->id.'-VENDOR-'.$orderVendor->vendor_id,
+                                ]);
+
+                                // Update wallet balance
+                                $wallet->increment('balance', $orderVendor->subtotal);
+
+                                // Mark as disbursed
+                                $orderVendor->update([
+                                    'is_disbursed' => true,
+                                    'disbursed_at' => now(),
+                                    'disbursed_by' => Auth::id(),
+                                ]);
+
+                                // Notify vendor
+                                $vendorUser = $orderVendor->vendor?->user;
+                                if ($vendorUser) {
+                                    $vendorUser->notifications()->create([
+                                        'id' => Str::uuid(),
+                                        'type' => 'App\\Notifications\\VendorDisbursement',
+                                        'data' => json_encode([
+                                            'title' => 'Dana Dicairkan',
+                                            'message' => 'Dana sebesar Rp '.number_format((float) $orderVendor->subtotal, 0, ',', '.').' dari pesanan #'.$record->order_number.' telah dicairkan ke wallet Anda.',
+                                            'order_id' => $record->id,
+                                            'order_number' => $record->order_number,
+                                            'amount' => $orderVendor->subtotal,
+                                        ]),
+                                    ]);
+                                }
+                            }
+                        });
                     }),
                 EditAction::make(),
             ])

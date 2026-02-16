@@ -14,11 +14,16 @@ class OrderVendor extends Model
         'order_id',
         'vendor_id',
         'subtotal',
-        'status'
+        'status',
+        'is_disbursed',
+        'disbursed_at',
+        'disbursed_by',
     ];
 
     protected $casts = [
         'status' => OrderVendorStatus::class,
+        'is_disbursed' => 'boolean',
+        'disbursed_at' => 'datetime',
     ];
 
     public function order()
@@ -39,5 +44,10 @@ class OrderVendor extends Model
     public function shipment()
     {
         return $this->hasOne(Shipment::class);
+    }
+
+    public function disbursedByUser()
+    {
+        return $this->belongsTo(User::class, 'disbursed_by');
     }
 }

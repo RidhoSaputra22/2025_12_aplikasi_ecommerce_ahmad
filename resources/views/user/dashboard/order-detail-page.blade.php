@@ -84,6 +84,33 @@
                         @endif
                     </div>
 
+                    {{-- Admin Bank Account Info - Show when payment is pending or failed --}}
+                    @if (in_array($order->payment->status->value, ['pending', 'failed']))
+                        @php
+                            $adminBankAccounts = \App\Models\AdminBankAccount::active()->get();
+                        @endphp
+                        @if ($adminBankAccounts->isNotEmpty())
+                            <div class="border-t pt-4 mt-4">
+                                <h4 class="text-sm font-semibold mb-3">
+                                    <svg class="inline w-4 h-4 mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                                    </svg>
+                                    Rekening Tujuan Pembayaran
+                                </h4>
+                                <p class="text-xs text-gray-500 mb-3">Transfer ke salah satu rekening berikut, lalu upload bukti pembayaran.</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    @foreach ($adminBankAccounts as $bankAccount)
+                                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                            <p class="text-xs text-blue-600 font-semibold uppercase">{{ $bankAccount->bank_name }}</p>
+                                            <p class="text-lg font-bold text-gray-800 mt-1 tracking-wider">{{ $bankAccount->account_number }}</p>
+                                            <p class="text-sm text-gray-600">a.n. {{ $bankAccount->account_holder }}</p>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    @endif
+
                     {{-- Payment Proof --}}
                     <div class="border-t pt-4 mt-4">
                         <h4 class="text-sm font-semibold mb-3">Bukti Pembayaran</h4>
@@ -124,6 +151,14 @@
                             </div>
                         @endif
                     </div>
+
+                    {{-- Payment Transaction Reference --}}
+                    @if ($order->payment->transaction_reference)
+                        <div class="border-t pt-4 mt-4">
+                            <h4 class="text-sm font-semibold mb-2">Referensi Transaksi</h4>
+                            <p class="text-sm font-mono bg-gray-50 px-3 py-2 rounded">{{ $order->payment->transaction_reference }}</p>
+                        </div>
+                    @endif
                 @else
                     <p class="text-gray-500 text-sm">Data pembayaran belum tersedia.</p>
                 @endif

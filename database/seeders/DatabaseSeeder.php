@@ -2,12 +2,16 @@
 
 namespace Database\Seeders;
 
+use App\Models\Product;
+use App\Models\ProductImage;
+use App\Models\ProductVariant;
 use App\Models\Role;
 use App\Models\Shipment;
 use App\Models\ShipmentAddress;
 use App\Models\ShipmentCourier;
 use App\Models\User;
 use App\Models\UserRole;
+use App\Models\Vendor;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -70,6 +74,30 @@ class DatabaseSeeder extends Seeder
             ],
         ]);
 
+        Vendor::insert([
+            [
+                'user_id' => 2,
+                'store_name' => 'Toko Vendor',
+                'description' => 'Deskripsi toko vendor',
+                'logo' => null,
+                'banner' => null,
+                'slug' => 'toko-vendor',
+            ],
+        ]);
+
+        Product::factory()
+            ->count(10)
+            ->has(
+                ProductImage::factory()
+                    ->count(1)
+            )
+            ->has(
+                ProductVariant::factory()->count(1)
+            )
+            ->create([
+                'vendor_id' => 1,
+            ]);
+
         Shipment::factory(5)->create();
 
         ShipmentCourier::factory(3)->create();
@@ -82,8 +110,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             CategorySeeder::class,
-            ProductSeeder::class,
-            ReviewSeeder::class,
+            AdminBankAccountSeeder::class,
+            // ProductSeeder::class,
+            // ReviewSeeder::class,
         ]);
 
     }

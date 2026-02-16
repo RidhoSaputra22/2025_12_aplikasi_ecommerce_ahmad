@@ -2,13 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\Review;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class ProductSeeder extends Seeder
 {
@@ -27,23 +25,22 @@ class ProductSeeder extends Seeder
 
         foreach ($categories as $categoryName) {
             Category::factory()
-            ->has(
-                Product::factory()
-                ->count(10)
                 ->has(
-                    ProductImage::factory()
-                    ->count(1)
-                )
-                ->has(
-                    ProductVariant::factory()->count(1)
-                )
+                    Product::factory()
+                        ->count(10)
+                        ->has(
+                            ProductImage::factory()
+                                ->count(1)
+                        )
+                        ->has(
+                            ProductVariant::factory()->count(1)
+                        )
 
-
-            )
-            ->create([
-                'name' => $categoryName,
-            ]);
+                )
+                ->create([
+                    'name' => $categoryName,
+                ]);
 
         }
-        }
+    }
 }

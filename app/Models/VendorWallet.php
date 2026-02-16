@@ -20,4 +20,9 @@ class VendorWallet extends Model
     {
         return $this->belongsTo(Vendor::class);
     }
+
+    public function transactions()
+    {
+        return $this->hasMany(VendorWalletTransaction::class);
+    }
 }

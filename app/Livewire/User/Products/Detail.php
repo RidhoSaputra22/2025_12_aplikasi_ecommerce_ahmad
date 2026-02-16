@@ -62,6 +62,13 @@ class Detail extends Component
             return redirect()->route('user.login');
         }
 
+        // vendor tidak bisa beli produk
+        if (Auth::user()->role?->name === 'vendor') {
+            session()->flash('error', 'Vendor tidak dapat membeli produk.');
+
+            return;
+        }
+
         $product = Product::query()->where('slug', $this->slug)->firstOrFail();
 
         $variantId = $this->selectedVariantId

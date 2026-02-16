@@ -50,8 +50,18 @@ class Regist extends Component
             ]);
         }
 
+        // make vendor profile if role is vendor
+        if ($this->role === 'vendor') {
+            $user->vendor()->create([
+                'name' => $this->nama,
+                'email' => $this->email,
+                'phone' => $this->phone ?: null,
+
+            ]);
+        }
+
         $roleLabel = $this->role === 'vendor' ? 'Vendor' : 'Customer';
-        session()->flash('message', 'Pendaftaran berhasil sebagai ' . $roleLabel . '! Silakan login.');
+        session()->flash('message', 'Pendaftaran berhasil sebagai '.$roleLabel.'! Silakan login.');
 
         return redirect()->route('user.login');
     }

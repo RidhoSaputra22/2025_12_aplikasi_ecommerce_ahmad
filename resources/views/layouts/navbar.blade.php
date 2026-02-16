@@ -36,7 +36,8 @@ return request()->routeIs($patterns);
         <ul class="flex gap-5 items-center">
             @if (auth()->check())
             <li class="relative">
-                <a href="{{ route('user.dashboard', ['tab' => 'notifications']) }}" class="block hover:text-primary">
+                <a href="{{ auth()->user()->role?->name === 'vendor' ? route('vendor.dashboard') : route('user.dashboard', ['tab' => 'notifications']) }}"
+                    class="block hover:text-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -44,11 +45,13 @@ return request()->routeIs($patterns);
                     </svg>
                 </a>
                 @if ($this->unreadNotificationCount > 0)
-                <span class="absolute -top-2 -right-2.5 text-sm/normal h-5 w-5 bg-red-500 text-white flex items-center justify-center rounded-full">
+                <span
+                    class="absolute -top-2 -right-2.5 text-sm/normal h-5 w-5 bg-red-500 text-white flex items-center justify-center rounded-full">
                     {{ $this->unreadNotificationCount > 9 ? '9+' : $this->unreadNotificationCount }}
                 </span>
                 @endif
             </li>
+            @if (auth()->user()->role?->name === 'customer')
             <li class="relative ">
                 <a href="{{ route('cart.index') }}" class="block hover:text-primary {{ $navActive('cart*') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -80,6 +83,9 @@ return request()->routeIs($patterns);
 
                 </div>
             </li>
+
+            @endif
+
             <li class="ml-3">
                 @component('components.dropdown', [
                 'align' => 'right',
@@ -103,10 +109,15 @@ return request()->routeIs($patterns);
                         </div>
                     </div>
                     <div class=" ">
-                        <a href="{{ route('user.dashboard') }}" class="text-sm font-medium block px-4 py-4 hover:bg-gray-100">
-                            Lihat Profil
+                        <a href="{{ auth()->user()->role?->name === 'vendor' ? route('vendor.dashboard') : route('user.dashboard') }}"
+                            class="text-sm font-medium block px-4 py-4 hover:bg-gray-100">
+                            {{ auth()->user()->role?->name === 'vendor' ? 'Dashboard Vendor' : 'Lihat Profil' }}
                         </a>
-                        <a href="{{ route('user.logout') }}" class="text-sm font-medium block px-4 py-4 hover:bg-gray-100">
+                        @if (auth()->user()->vendor)
+
+                        @endif
+                        <a href="{{ route('user.logout') }}"
+                            class="text-sm font-medium block px-4 py-4 hover:bg-gray-100">
                             Logout
                         </a>
                     </div>

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\PaymentGatewayInterface;
+use App\Services\Payment\MidtransService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +13,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Bind PaymentGatewayInterface ke MidtransService
+        // Untuk mengganti payment gateway, cukup ubah binding ini.
+        $this->app->bind(PaymentGatewayInterface::class, MidtransService::class);
     }
 
     /**

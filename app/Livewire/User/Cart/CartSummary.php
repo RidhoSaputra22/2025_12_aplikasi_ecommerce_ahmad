@@ -33,6 +33,7 @@ class CartSummary extends Component
     public string $address = '';
 
     public ?int $shipmentAddressId = null;
+    public ?int $redirectOrderId = null;
 
     protected $listeners = [
         'cart-updated' => '$refresh',
@@ -292,10 +293,18 @@ class CartSummary extends Component
             ]);
 
             CartItem::query()->where('cart_id', $cartId)->delete();
+
+            // Simpan order ID untuk redirect ke halaman pembayaran
+            $this->redirectOrderId = $order->id;
         });
 
-        session()->flash('success', 'Checkout berhasil. Pesanan dibuat.');
+        session()->flash('success', 'Checkout berhasil. Silakan lakukan pembayaran.');
         $this->dispatch('cart-updated');
+
+        // Redirect ke halaman pembayaran
+        if (isset($this->redirectOrderId)) {
+            $this->redirectRoute('payment.page', ['orderId' => $this->redirectOrderId]);
+        }
     }
 
     public function render()

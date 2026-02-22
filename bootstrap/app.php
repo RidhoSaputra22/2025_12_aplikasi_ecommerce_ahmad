@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'check.vendor.role' => \App\Http\Middleware\CheckVendorRole::class,
         ]);
+
+        // Exclude Midtrans webhook dari CSRF verification
+        $middleware->validateCsrfTokens(except: [
+            'api/midtrans/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

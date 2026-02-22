@@ -7,6 +7,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\VendorWalletTransactionType;
 use App\Models\VendorWallet;
+use App\Services\Payment\PaymentService;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -46,6 +47,16 @@ class OrdersTable
                     ->label('Bukti Bayar')
                     ->formatStateUsing(fn ($state) => $state ? '✅ Ada' : '❌ Belum')
                     ->color(fn ($state) => $state ? 'success' : 'danger'),
+                TextColumn::make('payment.payment_gateway')
+                    ->label('Gateway')
+                    ->formatStateUsing(fn ($state) => $state ? ucfirst($state) : 'Manual')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'midtrans' ? 'info' : 'gray')
+                    ->toggleable(),
+                TextColumn::make('payment.midtrans_payment_type')
+                    ->label('Tipe Bayar')
+                    ->formatStateUsing(fn ($state) => $state ? ucwords(str_replace('_', ' ', $state)) : '-')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('disbursement_status')
                     ->label('Pencairan')
                     ->getStateUsing(function ($record) {
@@ -215,6 +226,32 @@ class OrdersTable
                                 }
                             }
                         });
+                    }),
+                Action::make('sync_midtrans')
+                    ->label('Sync Midtrans')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('info')
+                    ->visible(fn ($record) =>
+                        $record->payment?->payment_gateway === 'midtrans'
+                        && in_array($record->payment?->status, [PaymentStatus::Pending])
+                    )
+                    ->requiresConfirmation()
+                    ->modalHeading('Sinkronkan Status Midtrans')
+                    ->modalDescription('Cek status terbaru pembayaran dari Midtrans.')
+                    ->action(function ($record) {
+                        try {
+                            $paymentService = app(PaymentService::class);
+                            $paymentService->syncPaymentStatus($record);
+                            \Filament\Notifications\Notification::make()
+                                ->title('Status Midtrans berhasil disinkronkan.')
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Gagal sinkronkan: ' . $e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
                     }),
                 EditAction::make(),
             ])

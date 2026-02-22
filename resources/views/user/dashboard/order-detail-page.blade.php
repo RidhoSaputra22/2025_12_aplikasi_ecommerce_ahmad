@@ -139,15 +139,30 @@
 
                         {{-- Upload Button - only show for pending or failed --}}
                         @if (in_array($order->payment->status->value, ['pending', 'failed']))
-                            <div class="mt-4">
+                            <div class="mt-4 space-y-3">
+                                {{-- Tombol Bayar dengan Midtrans --}}
+                                <a href="{{ route('payment.page', ['orderId' => $order->id]) }}"
+                                    class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                    <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                                    </svg>
+                                    Bayar Sekarang
+                                </a>
+
+                                <div class="relative">
+                                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+                                    <div class="relative flex justify-center text-xs"><span class="bg-white px-3 text-gray-400">atau</span></div>
+                                </div>
+
+                                {{-- Tombol Upload Bukti Manual --}}
                                 <button type="button" wire:click="openPaymentProofModal"
-                                    class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90">
-                                    <svg class="inline w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="inline-flex items-center bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                    <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                     </svg>
-                                    Upload Bukti Pembayaran
+                                    Upload Bukti Transfer Manual
                                 </button>
-                                <p class="text-xs text-gray-500 mt-2">Upload bukti transfer atau screenshot pembayaran untuk dikonfirmasi admin.</p>
+                                <p class="text-xs text-gray-500">Transfer ke rekening admin, lalu upload bukti pembayaran.</p>
                             </div>
                         @endif
                     </div>
@@ -157,6 +172,53 @@
                         <div class="border-t pt-4 mt-4">
                             <h4 class="text-sm font-semibold mb-2">Referensi Transaksi</h4>
                             <p class="text-sm font-mono bg-gray-50 px-3 py-2 rounded">{{ $order->payment->transaction_reference }}</p>
+                        </div>
+                    @endif
+
+                    {{-- Midtrans Payment Details --}}
+                    @if ($order->payment->isMidtrans())
+                        <div class="border-t pt-4 mt-4">
+                            <h4 class="text-sm font-semibold mb-3">Detail Pembayaran Midtrans</h4>
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                @if ($order->payment->midtrans_payment_type)
+                                    <div>
+                                        <p class="text-gray-500">Tipe Pembayaran</p>
+                                        <p class="font-medium capitalize">{{ str_replace('_', ' ', $order->payment->midtrans_payment_type) }}</p>
+                                    </div>
+                                @endif
+
+                                @if ($order->payment->midtrans_bank)
+                                    <div>
+                                        <p class="text-gray-500">Bank</p>
+                                        <p class="font-medium uppercase">{{ $order->payment->midtrans_bank }}</p>
+                                    </div>
+                                @endif
+                            </div>
+
+                            @if ($order->payment->midtrans_va_number)
+                                <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p class="text-xs text-blue-600 font-semibold uppercase">{{ $order->payment->midtrans_bank ?? 'Virtual Account' }}</p>
+                                    <p class="text-lg font-bold text-gray-800 mt-1 tracking-wider font-mono">{{ $order->payment->midtrans_va_number }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">Gunakan nomor ini untuk transfer via ATM/Mobile Banking.</p>
+                                </div>
+                            @endif
+
+                            @if ($order->payment->midtrans_store && $order->payment->midtrans_payment_code)
+                                <div class="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                    <p class="text-xs text-orange-600 font-semibold uppercase">{{ $order->payment->midtrans_store }}</p>
+                                    <p class="text-lg font-bold text-gray-800 mt-1 tracking-wider font-mono">{{ $order->payment->midtrans_payment_code }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">Tunjukkan kode ini ke kasir.</p>
+                                </div>
+                            @endif
+
+                            @if ($order->payment->expired_at && $order->payment->status->value === 'pending')
+                                <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-700">
+                                    <svg class="inline w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    Batas pembayaran: <strong>{{ $order->payment->expired_at->format('d M Y, H:i') }} WIB</strong>
+                                </div>
+                            @endif
                         </div>
                     @endif
                 @else

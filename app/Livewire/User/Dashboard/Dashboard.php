@@ -23,7 +23,7 @@ class Dashboard extends Component
             return;
         }
 
-        if (!in_array($this->tab, ['profile', 'history', 'order-detail', 'notifications'], true)) {
+        if (!in_array($this->tab, ['profile', 'history', 'tracking', 'order-detail', 'notifications'], true)) {
             $this->tab = 'profile';
         }
     }

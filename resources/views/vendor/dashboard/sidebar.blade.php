@@ -70,6 +70,20 @@
             </span>
         </a>
 
+        <a wire:navigate href="{{ route('vendor.dashboard', ['tab' => 'tracking']) }}"
+            class="block px-3 py-2 rounded-sm {{ $tab === 'tracking' ? 'bg-primary text-white' : 'hover:bg-gray-50' }}">
+            <span class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                </svg>
+                Tracking
+            </span>
+        </a>
+
         <a wire:navigate href="{{ route('vendor.dashboard', ['tab' => 'wallet']) }}"
             class="block px-3 py-2 rounded-sm {{ $tab === 'wallet' ? 'bg-primary text-white' : 'hover:bg-gray-50' }}">
             <span class="flex items-center gap-2">

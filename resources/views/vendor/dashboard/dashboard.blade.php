@@ -25,6 +25,8 @@
                 @livewire('vendor.dashboard.bank-account-page')
             @elseif ($tab === 'shipments')
                 @livewire('vendor.dashboard.shipment-page')
+            @elseif ($tab === 'tracking')
+                @livewire('vendor.dashboard.tracking-page')
             @else
                 @livewire('vendor.dashboard.overview-page')
             @endif

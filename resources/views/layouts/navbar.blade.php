@@ -13,10 +13,10 @@ return request()->routeIs($patterns);
     <div class="flex gap-15">
         <div class="flex items-center gap-2">
             <!-- <img src="{{ asset('images/logo.jpg') }}" alt="" class="w-14 aspect-square"> -->
-            <div class="">
+            <a href="{{ route('welcome') }}" class="">
                 <h1 class="text-xl font-semibold ">Toko Desa</h1>
                 <h1 class="text-sm/tight font-light">Melayani sejak 2010</h1>
-            </div>
+            </a>
         </div>
         <ul class="flex gap-10 items-center">
             <li>

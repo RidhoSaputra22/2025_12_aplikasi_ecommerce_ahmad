@@ -3,9 +3,10 @@
         <p class="text-sm text-gray-500">Dashboard</p>
         <p class="font-semibold text-lg">Akun Saya</p>
         @if (auth()->check() && auth()->user()->role)
-            <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
-                {{ auth()->user()->role->name }}
-            </span>
+        <span
+            class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
+            {{ auth()->user()->role->name }}
+        </span>
         @endif
     </div>
 
@@ -18,6 +19,11 @@
         <a wire:navigate href="{{ route('user.dashboard', ['tab' => 'history']) }}"
             class="block px-3 py-2 rounded-sm {{ $tab === 'history' || $tab === 'order-detail' ? 'bg-primary text-white' : 'hover:bg-gray-50' }}">
             Riwayat Pesanan
+        </a>
+
+        <a wire:navigate href="{{ route('user.dashboard', ['tab' => 'tracking']) }}"
+            class="block px-3 py-2 rounded-sm {{ $tab === 'tracking' ? 'bg-primary text-white' : 'hover:bg-gray-50' }}">
+            Tracking Pengiriman
         </a>
 
         <a wire:navigate href="{{ route('user.dashboard', ['tab' => 'notifications']) }}"

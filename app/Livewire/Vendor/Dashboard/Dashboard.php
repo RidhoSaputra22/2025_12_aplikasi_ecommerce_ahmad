@@ -37,7 +37,7 @@ class Dashboard extends Component
 
         $allowedTabs = [
             'overview', 'profile', 'orders', 'order-detail',
-            'products', 'product-form', 'wallet', 'bank-accounts', 'shipments',
+            'products', 'product-form', 'wallet', 'bank-accounts', 'shipments', 'tracking',
         ];
 
         if (! in_array($this->tab, $allowedTabs, true)) {

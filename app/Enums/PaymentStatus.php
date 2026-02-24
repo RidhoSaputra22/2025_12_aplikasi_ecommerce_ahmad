@@ -52,6 +52,7 @@ enum PaymentStatus: string implements HasColor, HasIcon, HasLabel
                 'value' => $case->value,
             ];
         }
+
         return $array;
     }
 }

@@ -62,9 +62,16 @@ class OrdersTable
                     ->getStateUsing(function ($record) {
                         $total = $record->orderVendors->count();
                         $disbursed = $record->orderVendors->where('is_disbursed', true)->count();
-                        if ($total === 0) return '-';
-                        if ($disbursed === $total) return '✅ Semua';
-                        if ($disbursed > 0) return "⏳ {$disbursed}/{$total}";
+                        if ($total === 0) {
+                            return '-';
+                        }
+                        if ($disbursed === $total) {
+                            return '✅ Semua';
+                        }
+                        if ($disbursed > 0) {
+                            return "⏳ {$disbursed}/{$total}";
+                        }
+
                         return '❌ Belum';
                     }),
                 TextColumn::make('created_at')
@@ -162,6 +169,7 @@ class OrdersTable
                         if ($record->status !== OrderStatus::Completed) {
                             return false;
                         }
+
                         return $record->orderVendors->where('is_disbursed', false)->count() > 0;
                     })
                     ->requiresConfirmation()
@@ -178,6 +186,7 @@ class OrdersTable
                             }
                             $lines[] = "• {$vendorName}: Rp ".number_format((float) $ov->subtotal, 0, ',', '.').$bankInfo;
                         }
+
                         return implode("\n", $lines);
                     })
                     ->action(function ($record) {
@@ -231,8 +240,7 @@ class OrdersTable
                     ->label('Sync Midtrans')
                     ->icon('heroicon-o-arrow-path')
                     ->color('info')
-                    ->visible(fn ($record) =>
-                        $record->payment?->payment_gateway === 'midtrans'
+                    ->visible(fn ($record) => $record->payment?->payment_gateway === 'midtrans'
                         && in_array($record->payment?->status, [PaymentStatus::Pending])
                     )
                     ->requiresConfirmation()
@@ -248,7 +256,7 @@ class OrdersTable
                                 ->send();
                         } catch (\Exception $e) {
                             \Filament\Notifications\Notification::make()
-                                ->title('Gagal sinkronkan: ' . $e->getMessage())
+                                ->title('Gagal sinkronkan: '.$e->getMessage())
                                 ->danger()
                                 ->send();
                         }

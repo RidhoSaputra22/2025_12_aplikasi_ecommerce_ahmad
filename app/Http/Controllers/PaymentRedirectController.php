@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Services\Payment\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -38,6 +39,20 @@ class PaymentRedirectController extends Controller
                 ->where('order_number', $orderId)
                 ->where('user_id', Auth::id())
                 ->first();
+        }
+
+        // Sync payment status dari Midtrans agar status terupdate real-time
+        if ($order && $order->payment && $order->payment->snap_token) {
+            try {
+                $paymentService = app(PaymentService::class);
+                $paymentService->syncPaymentStatus($order);
+                $order->refresh();
+            } catch (\Exception $e) {
+                Log::channel('payment')->warning('Failed to sync on redirect', [
+                    'order_number' => $order->order_number,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         if ($order) {

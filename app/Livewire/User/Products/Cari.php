@@ -2,31 +2,30 @@
 
 namespace App\Livewire\User\Products;
 
-use Livewire\Component;
-use Livewire\WithPagination;
-use Livewire\WithoutUrlPagination;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
+use Livewire\Component;
+use Livewire\WithoutUrlPagination;
+use Livewire\WithPagination;
 
 class Cari extends Component
 {
-
-    use WithPagination, WithoutUrlPagination;
-
-
+    use WithoutUrlPagination, WithPagination;
 
     public string $search = '';
+
     public ?string $selectedCategorySlug = null;
+
     public ?string $selectedHarga = null;
+
     public ?string $selectedSortBy = null;
 
-
     public function mount()
-{
-    if (request()->has('category')) {
-        $this->selectedCategorySlug = request('category');
+    {
+        if (request()->has('category')) {
+            $this->selectedCategorySlug = request('category');
+        }
     }
-}
 
     /**
      * Auto reset pagination ketika filter berubah
@@ -49,7 +48,8 @@ class Cari extends Component
     public function getProducts()
     {
         $query = Product::query()
-            ->with('category'); // eager load (recommended)
+            ->with('category') // eager load (recommended)
+            ->with('productVariants'); // eager load (recommended)
 
         // Filter kategori
         if ($this->selectedCategorySlug) {
@@ -60,9 +60,11 @@ class Cari extends Component
 
         // Filter harga
         if ($this->selectedHarga === 'low_to_high') {
-            $query->orderBy('price', 'asc');
+            $query->withMin('productVariants', 'price')
+                ->orderBy('product_variants_min_price', 'asc');
         } elseif ($this->selectedHarga === 'high_to_low') {
-            $query->orderBy('price', 'desc');
+            $query->withMin('productVariants', 'price')
+                ->orderBy('product_variants_min_price', 'desc');
         }
 
         // Sorting
@@ -75,8 +77,8 @@ class Cari extends Component
         // Search (GROUPED)
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('description', 'like', '%' . $this->search . '%');
+                $q->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('description', 'like', '%'.$this->search.'%');
             });
         }
 
@@ -86,7 +88,7 @@ class Cari extends Component
     public function render()
     {
         return view('user.products.cari', [
-            'products'   => $this->getProducts(),
+            'products' => $this->getProducts(),
             'categories' => Category::all(),
         ])->extends('layouts.app')->section('content');
     }

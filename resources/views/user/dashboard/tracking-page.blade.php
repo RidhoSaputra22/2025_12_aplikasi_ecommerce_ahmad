@@ -205,10 +205,22 @@ function getTrackingStepIndex($shipment, $orderStatus) {
                                         </div>
                                     @endif
                                 </div>
-                                <button type="button" wire:click="viewOrder({{ $order->id }})"
-                                    class="px-4 py-1.5 border border-gray-300 rounded-lg text-xs font-medium hover:bg-gray-100 transition-colors">
-                                    Lihat Detail
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    @if ($shipment && $shipment->status->value === 'shipped')
+                                        <button type="button"
+                                            wire:click="$dispatch('openModal', { component: 'components.shipment-tracking-map', arguments: { shipmentId: {{ $shipment->id }} }, title: 'Peta Pengiriman Live', maxWidth: '5xl' })"
+                                            class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors flex items-center gap-1.5">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                                            </svg>
+                                            Lihat Peta
+                                        </button>
+                                    @endif
+                                    <button type="button" wire:click="viewOrder({{ $order->id }})"
+                                        class="px-4 py-1.5 border border-gray-300 rounded-lg text-xs font-medium hover:bg-gray-100 transition-colors">
+                                        Lihat Detail
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

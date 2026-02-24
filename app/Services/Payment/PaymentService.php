@@ -11,7 +11,6 @@ use App\Enums\OrderVendorStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -59,7 +58,7 @@ class PaymentService
             'payment_gateway' => 'midtrans',
             'snap_token' => $result['token'],
             'snap_redirect_url' => $result['redirect_url'],
-            'expired_at' => now()->addMinutes(config('midtrans.payment_expiry_duration', 1440)),
+            'expired_at' => now()->addMinutes(1440), // Sesuaikan dengan expiryDuration
         ]);
 
         return $result;
@@ -81,10 +80,11 @@ class PaymentService
                 ->lockForUpdate()
                 ->first();
 
-            if (!$payment) {
+            if (! $payment) {
                 Log::channel('payment')->warning('Payment not found for notification', [
                     'order_id' => $callbackData->orderId,
                 ]);
+
                 return;
             }
 
@@ -93,6 +93,7 @@ class PaymentService
                 Log::channel('payment')->info('Payment already settled, skipping', [
                     'order_id' => $callbackData->orderId,
                 ]);
+
                 return;
             }
 
@@ -119,7 +120,7 @@ class PaymentService
             DB::transaction(function () use ($order, $callbackData) {
                 $payment = $order->payment()->lockForUpdate()->first();
 
-                if (!$payment || $payment->status === PaymentStatus::Success) {
+                if (! $payment || $payment->status === PaymentStatus::Success) {
                     return;
                 }
 
@@ -179,7 +180,7 @@ class PaymentService
                 $itemName = ($product?->name ?? 'Produk');
 
                 if ($variant?->variant_name) {
-                    $itemName .= ' - ' . $variant->variant_name;
+                    $itemName .= ' - '.$variant->variant_name;
                 }
 
                 // Midtrans membutuhkan nama item <= 50 karakter
@@ -204,10 +205,10 @@ class PaymentService
             if ($shipment && (int) $shipment->shipping_cost > 0) {
                 $shippingCost = (int) $shipment->shipping_cost;
                 $itemDetails[] = [
-                    'id' => 'SHIP-' . $orderVendor->id,
+                    'id' => 'SHIP-'.$orderVendor->id,
                     'price' => $shippingCost,
                     'quantity' => 1,
-                    'name' => 'Ongkir ' . Str::limit($orderVendor->vendor?->store_name ?? '', 35),
+                    'name' => 'Ongkir '.Str::limit($orderVendor->vendor?->store_name ?? '', 35),
                     'merchant_name' => Str::limit($orderVendor->vendor?->store_name ?? 'Vendor', 25),
                 ];
                 $calculatedTotal += $shippingCost;
@@ -310,9 +311,9 @@ class PaymentService
                 'status' => OrderStatus::Paid,
             ]);
 
-            // Update semua order vendor ke processing
+            // Update semua order vendor ke processed
             $order->orderVendors()->update([
-                'status' => OrderVendorStatus::Processing,
+                'status' => OrderVendorStatus::Processed,
             ]);
 
             // Kirim notifikasi ke vendor
@@ -339,7 +340,7 @@ class PaymentService
         foreach ($order->orderVendors as $orderVendor) {
             $vendorUser = $orderVendor->vendor?->user;
 
-            if (!$vendorUser) {
+            if (! $vendorUser) {
                 continue;
             }
 
@@ -349,7 +350,7 @@ class PaymentService
                     'type' => 'App\\Notifications\\OrderPaidNotification',
                     'data' => json_encode([
                         'title' => 'Pesanan Baru Dibayar',
-                        'message' => 'Pesanan #' . $order->order_number . ' telah dibayar. Silakan proses pesanan.',
+                        'message' => 'Pesanan #'.$order->order_number.' telah dibayar. Silakan proses pesanan.',
                         'order_id' => $order->id,
                         'order_number' => $order->order_number,
                         'order_vendor_id' => $orderVendor->id,

@@ -6,55 +6,51 @@
 
             <div class="space-y-6">
                 @component('components.form.select', [
-                    'label' => 'Kategori',
-                    'wireModel' => 'selectedCategorySlug',
-                    'default' => [
-                        'label' => 'Semua Kategori',
-                        'value' => '',
-                    ],
-                    'options' => $categories->map(fn ($c) => [
-                        'label' => $c->name,
-                        'value' => $c->slug,
-                    ]),
+                'label' => 'Kategori',
+                'wireModel' => 'selectedCategorySlug',
+                'default' => [
+                'label' => 'Semua Kategori',
+                'value' => '',
+                ],
+                'options' => $categories->map(fn ($c) => [
+                'label' => $c->name,
+                'value' => $c->slug,
+                ]),
                 ]) @endcomponent
 
                 @component('components.form.select', [
-                    'label' => 'Harga',
-                    'wireModel' => 'selectedHarga',
-                    'options' => [
-                        ['label' => 'Semua Harga', 'value' => ''],
-                        ['label' => 'Rendah ke Tinggi', 'value' => 'low_to_high'],
-                        ['label' => 'Tinggi ke Rendah', 'value' => 'high_to_low'],
-                    ],
+                'label' => 'Harga',
+                'wireModel' => 'selectedHarga',
+                'options' => [
+                ['label' => 'Semua Harga', 'value' => ''],
+                ['label' => 'Rendah ke Tinggi', 'value' => 'low_to_high'],
+                ['label' => 'Tinggi ke Rendah', 'value' => 'high_to_low'],
+                ],
                 ]) @endcomponent
 
                 @component('components.form.select', [
-                    'label' => 'Urutkan',
-                    'wireModel' => 'selectedSortBy',
-                    'options' => [
-                        ['label' => 'Terbaru', 'value' => 'newest'],
-                        ['label' => 'Terlama', 'value' => 'oldest'],
-                    ],
+                'label' => 'Urutkan',
+                'wireModel' => 'selectedSortBy',
+                'options' => [
+                ['label' => 'Terbaru', 'value' => 'newest'],
+                ['label' => 'Terlama', 'value' => 'oldest'],
+                ],
                 ]) @endcomponent
             </div>
         </div>
         <div class="flex-5 space-y-14 ">
             <div>
-               <input
-    type="text"
-    wire:model.live.debounce.500ms="search"
-    class="border rounded px-4 py-2 w-full"
-    placeholder="Masukkan nama produk..."
->
+                <input type="text" wire:model.live.debounce.500ms="search" class="border rounded px-4 py-2 w-full"
+                    placeholder="Masukkan nama produk...">
             </div>
             {{ $products->links(data: ['scrollTo' => '#paginated-posts']) }}
 
-            <div class="grid grid-cols-4 gap-10 " wire:loading.class="opacity-60 bg-white animate-pulse" >
+            <div class="grid grid-cols-4 gap-10 " wire:loading.class="opacity-60 bg-white animate-pulse">
                 @forelse ($products as $product)
                 <a href="{{ route('produk.detail', ['slug' => $product->slug]) }}" class="">
                     <div class="relative">
                         <img src="{{ Storage::url($product->productImages->first->image->image ?? 'products/product_placeholder.jpg') }}"
-                        alt="" class="rounded-xl w-full h-60 object-cover">
+                            alt="" class="rounded-xl w-full h-60 object-cover">
                         <div
                             class="absolute top-2 left-2 bg-primary px-3 py-1 rounded-md text-sm font-medium text-white">
                             {{ $product->category->name }}</div>
@@ -64,7 +60,7 @@
                             {{ $product->name }}
                         </h1>
                         <h1 class="text-lg font-semibold mt-2">Rp.
-                            {{ number_format($product->price, 0, ',', ',') }}
+                            {{ number_format($product->productVariants->first()->price, 0, ',', '.') }}
                         </h1>
                         <div class="flex gap-2 text-primary items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"

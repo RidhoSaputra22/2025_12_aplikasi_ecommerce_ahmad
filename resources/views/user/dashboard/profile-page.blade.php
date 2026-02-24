@@ -127,39 +127,67 @@
     </div>
     @else
     <div wire:loading.class="opacity-50 pointer-events-none">
-        <div class="flex items-start justify-between gap-4 p-4">
+        <div class="p-4">
+            <h3 class="text-lg font-semibold">Alamat Pengiriman</h3>
+            <p class="text-sm text-gray-500">Isi satu alamat pengiriman yang akan digunakan untuk semua pesanan.</p>
+        </div>
+
+        @if (session()->has('success'))
+        <div class="mx-4 mb-4 p-3 rounded-sm border border-green-200 bg-green-50 text-green-700 text-sm">
+            {{ session('success') }}
+        </div>
+        @endif
+
+        <form wire:submit.prevent="saveAddress" class="px-4 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                @component('components.form.input', [
+                'label' => 'Provinsi',
+                'wireModel' => 'addrProvince',
+                'placeholder' => 'Contoh: Jawa Barat',
+                'required' => true,
+                ])
+                @endcomponent
+
+                @component('components.form.input', [
+                'label' => 'Kota / Kabupaten',
+                'wireModel' => 'addrCity',
+                'placeholder' => 'Contoh: Bandung',
+                'required' => true,
+                ])
+                @endcomponent
+
+                @component('components.form.input', [
+                'label' => 'Kecamatan',
+                'wireModel' => 'addrDistrict',
+                'placeholder' => 'Contoh: Cicendo',
+                'required' => true,
+                ])
+                @endcomponent
+
+                @component('components.form.input', [
+                'label' => 'Kode Pos',
+                'wireModel' => 'addrPostalCode',
+                'placeholder' => 'Contoh: 40171',
+                'required' => true,
+                ])
+                @endcomponent
+            </div>
+
+            @component('components.form.textarea', [
+            'label' => 'Alamat Lengkap',
+            'wireModel' => 'addrAddress',
+            'placeholder' => 'Nama jalan, nomor rumah, RT/RW, dll.',
+            'required' => true,
+            ])
+            @endcomponent
+
             <div>
-                <h3 class="text-lg font-semibold">Alamat Pengiriman</h3>
-                <p class="text-sm text-gray-500">Kelola alamat yang bisa dipakai untuk pengiriman.</p>
+                <button type="submit" wire:loading.attr="disabled" wire:target="saveAddress"
+                    class="bg-primary text-white px-6 py-2 rounded-sm text-sm font-semibold hover:opacity-90">
+                    Simpan Alamat
+                </button>
             </div>
-
-            <button type="button" wire:click="openShipmentAddressCreateModal"
-                class="bg-primary text-white px-4 py-2 rounded-sm text-sm font-semibold hover:opacity-90">
-                Tambah Alamat
-            </button>
-        </div>
-
-        <div class="space-y-3">
-            @forelse (($addresses ?? []) as $address)
-            <div class="p-4 rounded-sm border bg-white">
-                <div class="flex items-start justify-between gap-4 cursor-pointer" wire:click="openShipmentAddressEditModal({{ (int) $address->id }})">
-                    <div>
-                        <div class="font-medium">{{ $address->address }}</div>
-                        <div class="text-sm text-gray-500">
-                            {{ $address->district }}, {{ $address->city }}, {{ $address->province }}
-                            {{ $address->postal_code }}
-                        </div>
-                    </div>
-
-
-                </div>
-            </div>
-            @empty
-            <div class="p-4 rounded-sm border bg-gray-50 text-gray-600 text-sm">
-                Belum ada alamat pengiriman.
-            </div>
-            @endforelse
-        </div>
+        </form>
     </div>
 
     @endif

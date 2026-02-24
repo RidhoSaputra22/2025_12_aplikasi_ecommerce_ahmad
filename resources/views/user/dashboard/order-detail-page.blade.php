@@ -6,6 +6,7 @@
         'waiting_confirmation' => 'bg-blue-100 text-blue-800',
         'paid' => 'bg-green-100 text-green-800',
         'shipped' => 'bg-indigo-100 text-indigo-800',
+        'delivered' => 'bg-teal-100 text-teal-800',
         'completed' => 'bg-green-100 text-green-800',
         'cancelled' => 'bg-red-100 text-red-800',
         'failed' => 'bg-red-100 text-red-800',
@@ -84,32 +85,7 @@
                         @endif
                     </div>
 
-                    {{-- Admin Bank Account Info - Show when payment is pending or failed --}}
-                    @if (in_array($order->payment->status->value, ['pending', 'failed']))
-                        @php
-                            $adminBankAccounts = \App\Models\AdminBankAccount::active()->get();
-                        @endphp
-                        @if ($adminBankAccounts->isNotEmpty())
-                            <div class="border-t pt-4 mt-4">
-                                <h4 class="text-sm font-semibold mb-3">
-                                    <svg class="inline w-4 h-4 mr-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                                    </svg>
-                                    Rekening Tujuan Pembayaran
-                                </h4>
-                                <p class="text-xs text-gray-500 mb-3">Transfer ke salah satu rekening berikut, lalu upload bukti pembayaran.</p>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    @foreach ($adminBankAccounts as $bankAccount)
-                                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                            <p class="text-xs text-blue-600 font-semibold uppercase">{{ $bankAccount->bank_name }}</p>
-                                            <p class="text-lg font-bold text-gray-800 mt-1 tracking-wider">{{ $bankAccount->account_number }}</p>
-                                            <p class="text-sm text-gray-600">a.n. {{ $bankAccount->account_holder }}</p>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
-                    @endif
+
 
                     {{-- Payment Proof --}}
                     <div class="border-t pt-4 mt-4">
@@ -137,10 +113,65 @@
                             <p class="text-sm text-gray-500 mb-3">Belum ada bukti pembayaran.</p>
                         @endif
 
-                        {{-- Upload Button - only show for pending or failed --}}
-                        @if (in_array($order->payment->status->value, ['pending', 'failed']))
+                        {{-- Payment Actions --}}
+                        @php
+                            $hasPendingMidtrans = $order->payment->snap_token
+                                && $order->payment->payment_gateway === 'midtrans'
+                                && $order->payment->status->value === 'pending'
+                                && $order->payment->expired_at
+                                && $order->payment->expired_at->isFuture();
+                        @endphp
+
+                        @if ($hasPendingMidtrans)
+                            {{-- Midtrans payment sudah initiated, tampilkan info menunggu --}}
                             <div class="mt-4 space-y-3">
-                                {{-- Tombol Bayar dengan Midtrans --}}
+                                <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                    <div class="flex items-start gap-3">
+                                        <svg class="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-semibold text-yellow-800">Menunggu Pembayaran</p>
+                                            <p class="text-xs text-yellow-700 mt-1">Pembayaran via Midtrans sedang menunggu. Silakan selesaikan pembayaran sesuai instruksi.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if ($order->payment->midtrans_va_number)
+                                    <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <p class="text-xs text-blue-600 font-semibold uppercase">{{ $order->payment->midtrans_bank ?? 'Virtual Account' }}</p>
+                                        <p class="text-lg font-bold text-gray-800 mt-1 tracking-wider font-mono">{{ $order->payment->midtrans_va_number }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">Transfer sesuai nominal ke nomor VA di atas.</p>
+                                    </div>
+                                @endif
+
+                                @if ($order->payment->midtrans_store && $order->payment->midtrans_payment_code)
+                                    <div class="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                        <p class="text-xs text-orange-600 font-semibold uppercase">{{ $order->payment->midtrans_store }}</p>
+                                        <p class="text-lg font-bold text-gray-800 mt-1 tracking-wider font-mono">{{ $order->payment->midtrans_payment_code }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">Tunjukkan kode ini ke kasir.</p>
+                                    </div>
+                                @endif
+
+                                @if ($order->payment->expired_at)
+                                    <p class="text-xs text-gray-500">
+                                        Batas pembayaran: <strong>{{ $order->payment->expired_at->format('d M Y, H:i') }} WIB</strong>
+                                    </p>
+                                @endif
+
+                                @if ($order->payment->snap_redirect_url)
+                                    <a href="{{ $order->payment->snap_redirect_url }}" target="_blank"
+                                        class="inline-flex items-center bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                        <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                        </svg>
+                                        Lihat Instruksi Pembayaran
+                                    </a>
+                                @endif
+                            </div>
+                        @elseif (in_array($order->payment->status->value, ['pending', 'failed']))
+                            {{-- Belum ada pembayaran Midtrans atau sudah expired - tampilkan tombol bayar --}}
+                            <div class="mt-4">
                                 <a href="{{ route('payment.page', ['orderId' => $order->id]) }}"
                                     class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
                                     <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,21 +179,6 @@
                                     </svg>
                                     Bayar Sekarang
                                 </a>
-
-                                <div class="relative">
-                                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
-                                    <div class="relative flex justify-center text-xs"><span class="bg-white px-3 text-gray-400">atau</span></div>
-                                </div>
-
-                                {{-- Tombol Upload Bukti Manual --}}
-                                <button type="button" wire:click="openPaymentProofModal"
-                                    class="inline-flex items-center bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                                    <svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                    </svg>
-                                    Upload Bukti Transfer Manual
-                                </button>
-                                <p class="text-xs text-gray-500">Transfer ke rekening admin, lalu upload bukti pembayaran.</p>
                             </div>
                         @endif
                     </div>
@@ -292,19 +308,94 @@
                                 </div>
                                 @endif
                             </div>
+
+                            {{-- Live Ship Tracking Map --}}
+                            @if ($orderVendor->shipment->status->value === 'shipped')
+                                <div class="mt-4">
+                                    <h4 class="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                                        </svg>
+                                        Peta Pengiriman Live
+                                    </h4>
+                                    @livewire('components.shipment-tracking-map', ['shipmentId' => $orderVendor->shipment->id], key('map-user-'.$orderVendor->shipment->id))
+                                </div>
+                            @endif
                         </div>
                     @endif
 
-                    <div class="border-t pt-3 mt-2 flex justify-between text-sm">
-                        <span class="text-gray-600">Subtotal Vendor</span>
-                        <span class="font-semibold">Rp {{ number_format((float) $orderVendor->subtotal, 0, ',', '.') }}</span>
+                    {{-- Konfirmasi Penerimaan (hanya saat vendor sudah konfirmasi tiba) --}}
+                    @if ($orderVendor->status->value === 'delivered')
+                    <div class="mt-4 p-4 bg-teal-50 border border-teal-300 rounded-lg">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-teal-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8 9-4-4" />
+                            </svg>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-teal-800">Vendor Mengkonfirmasi Paket Tiba</p>
+                                <p class="text-sm text-teal-700 mt-1">Apakah Anda sudah menerima pesanan dari <strong>{{ $orderVendor->vendor?->store_name }}</strong>?</p>
+                                @if ($orderVendor->vendor_confirmed_at)
+                                <p class="text-xs text-gray-400 mt-1">Dikonfirmasi tiba oleh vendor: {{ $orderVendor->vendor_confirmed_at->format('d M Y, H:i') }}</p>
+                                @endif
+                                <button type="button"
+                                    wire:click="confirmReceived({{ $orderVendor->id }})"
+                                    wire:confirm="Konfirmasi bahwa Anda telah menerima pesanan ini? Dana akan dikirim ke vendor."
+                                    class="mt-3 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                    Konfirmasi Pesanan Diterima
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    @elseif ($orderVendor->status->value === 'completed')
+                    <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                        <svg class="w-4 h-4 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <div>
+                            <p class="text-sm text-green-700 font-medium">Pesanan dari {{ $orderVendor->vendor?->store_name }} telah selesai.</p>
+                            @if ($orderVendor->customer_confirmed_at)
+                            <p class="text-xs text-gray-400">Dikonfirmasi: {{ $orderVendor->customer_confirmed_at->format('d M Y, H:i') }}</p>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
+                    <div class="border-t pt-3 mt-2 space-y-1">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Subtotal Produk</span>
+                            <span class="font-semibold">Rp {{ number_format((float) $orderVendor->subtotal, 0, ',', '.') }}</span>
+                        </div>
+                        @if ($orderVendor->shipment && (float) $orderVendor->shipment->shipping_cost > 0)
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Ongkir
+                                    @if ($orderVendor->shipment->shipmentCourier)
+                                        <span class="text-xs text-gray-400">({{ $orderVendor->shipment->shipmentCourier->name }} {{ $orderVendor->shipment->shipmentCourier->service }})</span>
+                                    @endif
+                                </span>
+                                <span class="font-semibold">Rp {{ number_format((float) $orderVendor->shipment->shipping_cost, 0, ',', '.') }}</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endforeach
 
             {{-- Total --}}
-            <div class="border rounded-lg p-5">
-                <div class="flex justify-between text-lg font-semibold">
+            <div class="border rounded-lg p-5 space-y-2">
+                @php
+                    $prodSubtotal = $order->orderVendors->sum(fn($ov) => (float) $ov->subtotal);
+                    $totalOngkirOrder = $order->orderVendors->sum(fn($ov) => (float) ($ov->shipment?->shipping_cost ?? 0));
+                @endphp
+                <div class="flex justify-between text-sm text-gray-600">
+                    <span>Subtotal Produk</span>
+                    <span>Rp {{ number_format($prodSubtotal, 0, ',', '.') }}</span>
+                </div>
+                @if ($totalOngkirOrder > 0)
+                <div class="flex justify-between text-sm text-gray-600">
+                    <span>Total Ongkir</span>
+                    <span>Rp {{ number_format($totalOngkirOrder, 0, ',', '.') }}</span>
+                </div>
+                @endif
+                <div class="pt-2 border-t flex justify-between text-lg font-semibold">
                     <span>Total Pesanan</span>
                     <span>Rp {{ number_format((float) $order->total_amount, 0, ',', '.') }}</span>
                 </div>

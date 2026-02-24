@@ -3,8 +3,10 @@
 namespace App\Livewire\User\Dashboard;
 
 use App\Enums\OrderPaymentStatus;
+use App\Enums\OrderVendorStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
+use App\Models\OrderVendor;
 use App\Models\Payment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -129,6 +131,114 @@ class OrderDetailPage extends Component
                 ]),
             ]);
         }
+    }
+
+    /**
+     * Customer mengkonfirmasi pesanan diterima untuk satu sub-order (per vendor).
+     * Setelah konfirmasi, dana otomatis masuk ke wallet vendor.
+     */
+    public function confirmReceived(int $orderVendorId): void
+    {
+        if (!Auth::check()) {
+            $this->redirectRoute('user.login');
+            return;
+        }
+
+        $order = $this->order;
+        if (!$order) {
+            session()->flash('error', 'Pesanan tidak ditemukan.');
+            return;
+        }
+
+        // Pastikan orderVendor ini milik order customer yang bersangkutan
+        $orderVendor = OrderVendor::with(['vendor.vendorWallet', 'order'])
+            ->where('id', $orderVendorId)
+            ->where('order_id', $order->id)
+            ->first();
+
+        if (!$orderVendor) {
+            session()->flash('error', 'Data sub-pesanan tidak ditemukan.');
+            return;
+        }
+
+        if ($orderVendor->status !== OrderVendorStatus::Delivered) {
+            session()->flash('error', 'Konfirmasi penerimaan hanya bisa dilakukan setelah vendor mengkonfirmasi pesanan tiba.');
+            return;
+        }
+
+        // Update status orderVendor → completed
+        $orderVendor->update([
+            'status' => OrderVendorStatus::Completed,
+            'customer_confirmed_at' => now(),
+        ]);
+
+        // Credit wallet vendor otomatis
+        $this->creditVendorWallet($orderVendor);
+
+        // Update status main order jika semua sub-order selesai
+        $this->updateMainOrderStatus($orderVendor);
+
+        // Notify vendor
+        $this->notifyVendor($orderVendor);
+
+        session()->flash('success', 'Penerimaan pesanan dikonfirmasi. Dana telah dikirim ke wallet vendor.');
+    }
+
+    protected function creditVendorWallet(OrderVendor $orderVendor): void
+    {
+        $vendor = $orderVendor->vendor;
+        if (!$vendor) {
+            return;
+        }
+
+        $wallet = $vendor->vendorWallet;
+        if (!$wallet) {
+            $wallet = $vendor->vendorWallet()->create(['balance' => 0]);
+        }
+
+        $amount = (float) $orderVendor->subtotal;
+        $wallet->increment('balance', $amount);
+
+        $wallet->transactions()->create([
+            'vendor_wallet_id' => $wallet->id,
+            'type' => 'credit',
+            'amount' => $amount,
+            'description' => 'Pendapatan dari pesanan #' . $orderVendor->order?->order_number,
+            'reference_id' => $orderVendor->id,
+        ]);
+    }
+
+    protected function updateMainOrderStatus(OrderVendor $orderVendor): void
+    {
+        $order = $orderVendor->order;
+        if (!$order) {
+            return;
+        }
+
+        $allVendorOrders = $order->orderVendors()->get();
+
+        if ($allVendorOrders->every(fn($ov) => $ov->status === OrderVendorStatus::Completed)) {
+            $order->update(['status' => 'completed']);
+        }
+    }
+
+    protected function notifyVendor(OrderVendor $orderVendor): void
+    {
+        $vendorUser = $orderVendor->vendor?->user;
+        if (!$vendorUser) {
+            return;
+        }
+
+        $vendorUser->notifications()->create([
+            'id' => \Illuminate\Support\Str::uuid(),
+            'type' => 'App\\Notifications\\OrderStatusUpdated',
+            'data' => json_encode([
+                'title' => 'Pesanan Selesai — Dana Dikirim',
+                'message' => 'Pembeli telah mengkonfirmasi penerimaan pesanan #' . $orderVendor->order?->order_number . '. Dana telah masuk ke wallet Anda.',
+                'order_id' => $orderVendor->order_id,
+                'order_number' => $orderVendor->order?->order_number,
+            ]),
+        ]);
     }
 
     public function openPaymentProofModal(): void

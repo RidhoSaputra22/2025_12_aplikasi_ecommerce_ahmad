@@ -98,16 +98,16 @@ class OrderDetailPage extends Component
         session()->flash('success', 'Pesanan berhasil dikirim dengan resi: ' . $this->tracking_number);
     }
 
-    public function completeOrder(): void
+    public function confirmDelivery(): void
     {
         $orderVendor = $this->orderVendor;
+
         if (!$orderVendor || $orderVendor->status !== OrderVendorStatus::Shipped) {
-            session()->flash('error', 'Pesanan tidak bisa diselesaikan.');
+            session()->flash('error', 'Pesanan tidak bisa dikonfirmasi tiba saat ini.');
             return;
         }
 
-        $orderVendor->update(['status' => OrderVendorStatus::Completed]);
-
+        // Update shipment ke delivered
         if ($orderVendor->shipment) {
             $orderVendor->shipment->update([
                 'status' => ShipmentStatus::Delivered,
@@ -115,16 +115,20 @@ class OrderDetailPage extends Component
             ]);
         }
 
-        // Credit vendor wallet
-        $this->creditVendorWallet($orderVendor);
+        // Update order vendor ke delivered (belum completed — menunggu konfirmasi customer)
+        $orderVendor->update([
+            'status' => OrderVendorStatus::Delivered,
+            'vendor_confirmed_at' => now(),
+        ]);
 
-        // Check if all vendor orders completed → update main order
-        $this->updateMainOrderStatus($orderVendor);
+        // Notify customer untuk konfirmasi penerimaan
+        $this->notifyCustomer(
+            $orderVendor,
+            'Pesanan Tiba — Konfirmasi Penerimaan',
+            'Vendor mengkonfirmasi pesanan Anda telah tiba. Silakan konfirmasi penerimaan di halaman detail pesanan Anda.'
+        );
 
-        // Notify customer
-        $this->notifyCustomer($orderVendor, 'Pesanan Selesai', 'Pesanan Anda telah selesai dan diterima.');
-
-        session()->flash('success', 'Pesanan telah diselesaikan.');
+        session()->flash('success', 'Pesanan dikonfirmasi tiba. Menunggu konfirmasi penerimaan dari pembeli.');
     }
 
     protected function updateMainOrderStatus(OrderVendor $orderVendor): void
@@ -134,41 +138,18 @@ class OrderDetailPage extends Component
             return;
         }
 
-        $allVendorOrders = $order->orderVendors;
+        $allVendorOrders = $order->orderVendors()->get();
 
-        // If all shipped
-        if ($allVendorOrders->every(fn($ov) => in_array($ov->status, [OrderVendorStatus::Shipped, OrderVendorStatus::Completed]))) {
+        // Jika semua shipped/delivered/completed → main order shipped
+        $shippedStatuses = [OrderVendorStatus::Shipped, OrderVendorStatus::Delivered, OrderVendorStatus::Completed];
+        if ($allVendorOrders->every(fn($ov) => in_array($ov->status, $shippedStatuses))) {
             $order->update(['status' => 'shipped']);
         }
 
-        // If all completed
+        // Jika semua sudah completed → main order completed
         if ($allVendorOrders->every(fn($ov) => $ov->status === OrderVendorStatus::Completed)) {
             $order->update(['status' => 'completed']);
         }
-    }
-
-    protected function creditVendorWallet(OrderVendor $orderVendor): void
-    {
-        $vendor = $orderVendor->vendor;
-        if (!$vendor) {
-            return;
-        }
-
-        $wallet = $vendor->vendorWallet;
-        if (!$wallet) {
-            $wallet = $vendor->vendorWallet()->create(['balance' => 0]);
-        }
-
-        $amount = (float) $orderVendor->subtotal;
-        $wallet->increment('balance', $amount);
-
-        $wallet->transactions()->create([
-            'vendor_wallet_id' => $wallet->id,
-            'type' => 'credit',
-            'amount' => $amount,
-            'description' => 'Pendapatan dari pesanan #' . $orderVendor->order?->order_number,
-            'reference_id' => $orderVendor->id,
-        ]);
     }
 
     protected function notifyCustomer(OrderVendor $orderVendor, string $title, string $message): void

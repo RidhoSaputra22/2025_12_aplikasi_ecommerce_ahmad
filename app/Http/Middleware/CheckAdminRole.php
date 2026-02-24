@@ -20,9 +20,8 @@ class CheckAdminRole
 
         if ($user && $user->role()->where('name', 'admin')->exists()) {
             return $next($request);
-        }else{
-            redirect()->route('filament.admin.auth.login');
         }
-        abort(403, 'Unauthorized');
+
+        return redirect()->route('filament.admin.auth.login');
     }
 }

@@ -10,30 +10,31 @@ use App\Models\OrderVendor;
 use App\Models\Payment;
 use App\Models\Shipment;
 use App\Models\ShipmentAddress;
+use App\Models\ShipmentCourier;
 use App\Models\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Livewire\Attributes\On;
 use Livewire\Component;
 
 class CartSummary extends Component
 {
-
     public string $name = '';
+
     public string $email = '';
+
     public string $phone = '';
 
-    public string $province = '';
-    public string $city = '';
-    public string $district = '';
-    public string $postal_code = '';
-    public string $address = '';
-
     public ?int $shipmentAddressId = null;
+
     public ?int $redirectOrderId = null;
+
+    /**
+     * Pilihan kurir per vendor: [vendor_id => courier_id]
+     */
+    public array $selectedCouriers = [];
 
     protected $listeners = [
         'cart-updated' => '$refresh',
@@ -41,7 +42,9 @@ class CartSummary extends Component
 
     public function mount(): void
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
+            $this->redirectRoute('user.login');
+
             return;
         }
 
@@ -55,64 +58,23 @@ class CartSummary extends Component
 
         if ($latestAddress) {
             $this->shipmentAddressId = (int) $latestAddress->id;
-            $this->province = (string) ($latestAddress->province ?? '');
-            $this->city = (string) ($latestAddress->city ?? '');
-            $this->district = (string) ($latestAddress->district ?? '');
-            $this->postal_code = (string) ($latestAddress->postal_code ?? '');
-            $this->address = (string) ($latestAddress->address ?? '');
         }
     }
 
     public function getSelectedShipmentAddressProperty(): ?ShipmentAddress
     {
-        if (!Auth::check() || !$this->shipmentAddressId) {
+        if (! Auth::check()) {
             return null;
         }
 
         return ShipmentAddress::query()
-            ->where('id', $this->shipmentAddressId)
             ->where('user_id', Auth::id())
             ->first();
-    }
-
-    public function openShippingAddressModal(): void
-    {
-        $this->dispatch(
-            'openModal',
-            component: 'user.cart.shipping-address-picker',
-            arguments: ['selectedId' => $this->shipmentAddressId],
-            title: 'Pilih Alamat Pengiriman',
-            maxWidth: '7xl',
-        );
-    }
-
-    #[On('shipping-address:selected')]
-    public function setShippingAddress(int $shipmentAddressId): void
-    {
-        if (!Auth::check()) {
-            return;
-        }
-
-        $address = ShipmentAddress::query()
-            ->where('id', $shipmentAddressId)
-            ->where('user_id', Auth::id())
-            ->first();
-
-        if (!$address) {
-            return;
-        }
-
-        $this->shipmentAddressId = (int) $address->id;
-        $this->province = (string) ($address->province ?? '');
-        $this->city = (string) ($address->city ?? '');
-        $this->district = (string) ($address->district ?? '');
-        $this->postal_code = (string) ($address->postal_code ?? '');
-        $this->address = (string) ($address->address ?? '');
     }
 
     public function getCartItemsProperty(): Collection
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return collect();
         }
 
@@ -120,12 +82,12 @@ class CartSummary extends Component
             ->where('user_id', Auth::id())
             ->value('id');
 
-        if (!$cartId) {
+        if (! $cartId) {
             return collect();
         }
 
         return CartItem::query()
-            ->with(['productVariant.product'])
+            ->with(['productVariant.product.vendor'])
             ->where('cart_id', $cartId)
             ->get();
     }
@@ -140,12 +102,82 @@ class CartSummary extends Component
         return (float) $this->cartItems->sum(fn (CartItem $item) => ((float) $item->price) * ((int) $item->quantity));
     }
 
+    /**
+     * Cart items grouped by vendor_id.
+     */
+    public function getVendorGroupsProperty(): Collection
+    {
+        return $this->cartItems->groupBy(function (CartItem $item) {
+            return (int) ($item->productVariant?->product?->vendor_id ?? 0);
+        });
+    }
 
+    /**
+     * List semua kurir yang tersedia.
+     */
+    public function getCouriersProperty(): Collection
+    {
+        return ShipmentCourier::query()->orderBy('name')->orderBy('service')->get();
+    }
+
+    /**
+     * Total ongkir berdasarkan kurir yang dipilih per vendor.
+     */
+    public function getShippingCostProperty(): float
+    {
+        if (empty($this->selectedCouriers)) {
+            return 0;
+        }
+
+        $courierIds = array_filter(array_values($this->selectedCouriers));
+
+        if (empty($courierIds)) {
+            return 0;
+        }
+
+        $couriers = ShipmentCourier::query()->whereIn('id', $courierIds)->get()->keyBy('id');
+
+        $total = 0;
+        foreach ($this->selectedCouriers as $vendorId => $courierId) {
+            if ($courierId && $couriers->has($courierId)) {
+                $total += (float) $couriers->get($courierId)->price;
+            }
+        }
+
+        return $total;
+    }
+
+    /**
+     * Grand total = subtotal produk + total ongkir.
+     */
+    public function getGrandTotalProperty(): float
+    {
+        return $this->subtotal + $this->shippingCost;
+    }
+
+    /**
+     * Cek apakah semua vendor sudah dipilih kurirnya.
+     */
+    public function getAllCouriersSelectedProperty(): bool
+    {
+        if ($this->cartItems->isEmpty()) {
+            return false;
+        }
+
+        foreach ($this->vendorGroups as $vendorId => $items) {
+            if (empty($this->selectedCouriers[$vendorId])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     public function checkout(): void
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             $this->redirectRoute('user.login');
+
             return;
         }
 
@@ -153,18 +185,45 @@ class CartSummary extends Component
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:50'],
-            'shipmentAddressId' => ['required', 'integer', 'exists:shipment_addresses,id'],
-        ], [
-            'postal_code.required' => 'Kode pos wajib diisi.',
         ]);
 
-        if ($this->cartItems->isEmpty()) {
+        // Auto-use the user's single shipment address
+        $userAddress = ShipmentAddress::query()
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (! $userAddress) {
             throw ValidationException::withMessages([
-                'cart' => 'Keranjang masih kosong.'
+                'cart' => 'Harap lengkapi alamat pengiriman di halaman profil terlebih dahulu.',
             ]);
         }
 
-        DB::transaction(function () use ($validated) {
+        $this->shipmentAddressId = $userAddress->id;
+
+        if ($this->cartItems->isEmpty()) {
+            throw ValidationException::withMessages([
+                'cart' => 'Keranjang masih kosong.',
+            ]);
+        }
+
+        // Validasi bahwa semua vendor sudah dipilih kurirnya
+        $vendorGroups = $this->cartItems->groupBy(function (CartItem $item) {
+            return (int) ($item->productVariant?->product?->vendor_id ?? 0);
+        });
+
+        foreach ($vendorGroups as $vendorId => $items) {
+            if (empty($this->selectedCouriers[$vendorId])) {
+                throw ValidationException::withMessages([
+                    'selectedCouriers' => 'Silakan pilih kurir pengiriman untuk semua vendor.',
+                ]);
+            }
+        }
+
+        // Pre-load semua courier yang dipilih
+        $courierIds = array_filter(array_values($this->selectedCouriers));
+        $couriersMap = ShipmentCourier::query()->whereIn('id', $courierIds)->get()->keyBy('id');
+
+        DB::transaction(function () use ($validated, $couriersMap) {
             /** @var User $user */
             $user = Auth::user();
 
@@ -174,9 +233,9 @@ class CartSummary extends Component
                 ->where('user_id', $user->id)
                 ->value('id');
 
-            if (!$cartId) {
+            if (! $cartId) {
                 throw ValidationException::withMessages([
-                    'cart' => 'Keranjang tidak ditemukan.'
+                    'cart' => 'Keranjang tidak ditemukan.',
                 ]);
             }
 
@@ -188,18 +247,33 @@ class CartSummary extends Component
 
             if ($cartItems->isEmpty()) {
                 throw ValidationException::withMessages([
-                    'cart' => 'Keranjang masih kosong.'
+                    'cart' => 'Keranjang masih kosong.',
                 ]);
             }
 
-            $totalAmount = (float) $cartItems->sum(fn (CartItem $item) => ((float) $item->price) * ((int) $item->quantity));
-            if ($totalAmount <= 0) {
+            // Hitung subtotal produk
+            $productSubtotal = (float) $cartItems->sum(fn (CartItem $item) => ((float) $item->price) * ((int) $item->quantity));
+            if ($productSubtotal <= 0) {
                 throw ValidationException::withMessages([
-                    'cart' => 'Total tidak valid.'
+                    'cart' => 'Total tidak valid.',
                 ]);
             }
 
+            // Hitung total ongkir
+            $totalShippingCost = 0;
+            $vendorsGrouped = $cartItems->groupBy(function (CartItem $item) {
+                return (int) ($item->productVariant?->product?->vendor_id ?? 0);
+            });
 
+            foreach ($vendorsGrouped as $vendorId => $items) {
+                $courierId = $this->selectedCouriers[$vendorId] ?? null;
+                $courier = $courierId ? $couriersMap->get($courierId) : null;
+                if ($courier) {
+                    $totalShippingCost += (float) $courier->price;
+                }
+            }
+
+            $totalAmount = $productSubtotal + $totalShippingCost;
 
             $order = Order::query()->create([
                 'user_id' => $user->id,
@@ -208,14 +282,10 @@ class CartSummary extends Component
                 'payment_status' => 'pending',
             ]);
 
-            $vendorsGrouped = $cartItems->groupBy(function (CartItem $item) {
-                return (int) ($item->productVariant?->product?->vendor_id ?? 0);
-            });
-
             foreach ($vendorsGrouped as $vendorId => $items) {
                 if ((int) $vendorId <= 0) {
                     throw ValidationException::withMessages([
-                        'cart' => 'Vendor produk tidak valid.'
+                        'cart' => 'Vendor produk tidak valid.',
                     ]);
                 }
 
@@ -230,30 +300,30 @@ class CartSummary extends Component
 
                 foreach ($items as $cartItem) {
                     $variant = $cartItem->productVariant;
-                    if (!$variant) {
+                    if (! $variant) {
                         throw ValidationException::withMessages([
-                            'cart' => 'Variant produk tidak tersedia.'
+                            'cart' => 'Variant produk tidak tersedia.',
                         ]);
                     }
 
                     $qty = (int) $cartItem->quantity;
                     if ($qty <= 0) {
                         throw ValidationException::withMessages([
-                            'cart' => 'Jumlah produk tidak valid.'
+                            'cart' => 'Jumlah produk tidak valid.',
                         ]);
                     }
 
                     $variantFresh = $variant->newQuery()->whereKey($variant->id)->lockForUpdate()->first();
-                    if (!$variantFresh) {
+                    if (! $variantFresh) {
                         throw ValidationException::withMessages([
-                            'cart' => 'Variant produk tidak tersedia.'
+                            'cart' => 'Variant produk tidak tersedia.',
                         ]);
                     }
 
                     $stock = (int) $variantFresh->stock;
                     if ($qty > $stock) {
                         throw ValidationException::withMessages([
-                            'cart' => 'Stok tidak mencukupi untuk salah satu produk.'
+                            'cart' => 'Stok tidak mencukupi untuk salah satu produk.',
                         ]);
                     }
 
@@ -270,12 +340,17 @@ class CartSummary extends Component
                     ]);
                 }
 
+                // Simpan shipment dengan kurir yang dipilih
+                $courierId = $this->selectedCouriers[$vendorId] ?? null;
+                $courier = $courierId ? $couriersMap->get($courierId) : null;
+                $shippingCost = $courier ? (float) $courier->price : 0;
+
                 Shipment::query()->create([
                     'order_vendor_id' => $orderVendor->id,
                     'shipment_address_id' => $this->shipmentAddressId,
-                    'shipment_courier_id' => null,
+                    'shipment_courier_id' => $courierId,
                     'tracking_number' => null,
-                    'shipping_cost' => 0,
+                    'shipping_cost' => $shippingCost,
                     'status' => 'pending',
                     'shipped_at' => null,
                     'delivered_at' => null,
@@ -284,7 +359,7 @@ class CartSummary extends Component
 
             Payment::query()->create([
                 'order_id' => $order->id,
-                'payment_method' => 'manual',
+                'payment_method' => 'midtrans',
                 'payment_gateway' => null,
                 'amount' => $totalAmount,
                 'status' => 'pending',

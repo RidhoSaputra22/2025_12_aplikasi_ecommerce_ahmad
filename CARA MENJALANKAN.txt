@@ -1,0 +1,8 @@
+# 1. Start Reverb WebSocket server
+php artisan reverb:start
+
+# 2. Start scheduler (untuk broadcast posisi tiap 30 detik)
+php artisan schedule:work
+
+# 3. Atau test manual broadcast langsung
+php artisan shipments:broadcast-positions

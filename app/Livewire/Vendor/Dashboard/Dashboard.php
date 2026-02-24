@@ -27,6 +27,13 @@ class Dashboard extends Component
             return;
         }
 
+        // Pastikan hanya user dengan role 'vendor' yang bisa mengakses dashboard ini
+        if (! Auth::user()->role()->where('name', 'vendor')->exists()) {
+            $this->redirectRoute('user.login');
+
+            return;
+        }
+
         $vendor = Auth::user()->vendor;
         if (! $vendor) {
             // dd('Vendor not found for the authenticated user.');

@@ -33,16 +33,13 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        if (($panel->getId() === 'vendor')) {
-            return $this->role && in_array($this->role->name, ['vendor']);
-        }
-
-        if (($panel->getId() === 'admin')) {
+        // Hanya admin yang boleh mengakses Filament admin panel
+        // (Panel vendor tidak menggunakan Filament — berbasis Livewire di /vendor/dashboard)
+        if ($panel->getId() === 'admin') {
             return $this->role && in_array($this->role->name, ['admin']);
         }
 
         return false;
-
     }
 
     public function userRoles()

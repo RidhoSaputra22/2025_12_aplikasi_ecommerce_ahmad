@@ -34,6 +34,8 @@ class CartDetails extends Component
         return CartItem::query()
             ->with([
                 'productVariant.product.productImages' => fn ($query) => $query->orderByDesc('is_primary'),
+                'productVariant.product.vendor',
+                'productVariant.product.category',
             ])
             ->where('cart_id', $cartId)
             ->orderByDesc('id')

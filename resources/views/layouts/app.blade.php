@@ -24,6 +24,8 @@
     <!-- Livewire -->
     @livewireStyles
 
+    @stack('styles')
+
     <title>E-Commerce Desa</title>
 
 </head>

@@ -11,6 +11,7 @@ enum OrderVendorStatus: string implements HasColor, HasIcon, HasLabel
     case Pending = 'pending';
     case Processed = 'processed';
     case Shipped = 'shipped';
+    case Delivered = 'delivered';
     case Completed = 'completed';
 
     public function getLabel(): string
@@ -19,6 +20,7 @@ enum OrderVendorStatus: string implements HasColor, HasIcon, HasLabel
             self::Pending => 'Menunggu',
             self::Processed => 'Diproses',
             self::Shipped => 'Dikirim',
+            self::Delivered => 'Tiba di Tujuan',
             self::Completed => 'Selesai',
         };
     }
@@ -29,6 +31,7 @@ enum OrderVendorStatus: string implements HasColor, HasIcon, HasLabel
             self::Pending => 'warning',
             self::Processed => 'info',
             self::Shipped => 'primary',
+            self::Delivered => 'secondary',
             self::Completed => 'success',
         };
     }
@@ -39,6 +42,7 @@ enum OrderVendorStatus: string implements HasColor, HasIcon, HasLabel
             self::Pending => 'heroicon-m-clock',
             self::Processed => 'heroicon-m-cog-6-tooth',
             self::Shipped => 'heroicon-m-truck',
+            self::Delivered => 'heroicon-m-map-pin',
             self::Completed => 'heroicon-m-check-circle',
         };
     }

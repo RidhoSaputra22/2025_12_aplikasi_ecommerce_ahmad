@@ -18,12 +18,16 @@ class OrderVendor extends Model
         'is_disbursed',
         'disbursed_at',
         'disbursed_by',
+        'vendor_confirmed_at',
+        'customer_confirmed_at',
     ];
 
     protected $casts = [
         'status' => OrderVendorStatus::class,
         'is_disbursed' => 'boolean',
         'disbursed_at' => 'datetime',
+        'vendor_confirmed_at' => 'datetime',
+        'customer_confirmed_at' => 'datetime',
     ];
 
     public function order()

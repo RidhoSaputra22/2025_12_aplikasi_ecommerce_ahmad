@@ -4,10 +4,8 @@ namespace App\Livewire\User\Dashboard;
 
 use App\Models\ShipmentAddress;
 use App\Models\User;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
-use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ProfilePage extends Component
@@ -20,17 +18,23 @@ class ProfilePage extends Component
 
     public int $tab = 1;
 
+    // Address fields
+    public string $addrProvince = '';
+    public string $addrCity = '';
+    public string $addrDistrict = '';
+    public string $addrPostalCode = '';
+    public string $addrAddress = '';
 
-    public function getShipmentAddressesProperty(): Collection
+
+    public function getShipmentAddressProperty(): ?ShipmentAddress
     {
         if (!Auth::check()) {
-            return collect();
+            return null;
         }
 
         return ShipmentAddress::query()
             ->where('user_id', Auth::id())
-            ->latest('id')
-            ->get();
+            ->first();
     }
 
     public function mount(): void
@@ -47,6 +51,16 @@ class ProfilePage extends Component
         $this->phone = $user->phone;
         $this->foto = $user->foto;
         $this->description = $user->description;
+
+        // Load single address
+        $address = ShipmentAddress::query()->where('user_id', $user->id)->first();
+        if ($address) {
+            $this->addrProvince   = (string) ($address->province ?? '');
+            $this->addrCity       = (string) ($address->city ?? '');
+            $this->addrDistrict   = (string) ($address->district ?? '');
+            $this->addrPostalCode = (string) ($address->postal_code ?? '');
+            $this->addrAddress    = (string) ($address->address ?? '');
+        }
     }
 
     public function rules(): array
@@ -92,13 +106,7 @@ class ProfilePage extends Component
 
     public function openShipmentAddressCreateModal(): void
     {
-        $this->dispatch(
-            'openModal',
-            component: 'user.cart.shipping-address-create',
-            arguments: [],
-            title: 'Tambah Alamat Pengiriman',
-            maxWidth: '3xl',
-        );
+        // No longer used — address is edited inline
     }
 
     public function openPhotoUploadModal(): void
@@ -138,37 +146,46 @@ class ProfilePage extends Component
 
     public function openShipmentAddressEditModal(int $shipmentAddressId): void
     {
-        $this->dispatch(
-            'openModal',
-            component: 'user.cart.shipping-address-create',
-            arguments: ['shipmentAddressId' => $shipmentAddressId],
-            title: 'Edit Alamat Pengiriman',
-            maxWidth: '3xl',
+        // No longer used — address is edited inline
+    }
+
+    public function saveAddress(): void
+    {
+        $this->validate([
+            'addrProvince'   => ['required', 'string', 'max:100'],
+            'addrCity'       => ['required', 'string', 'max:100'],
+            'addrDistrict'   => ['required', 'string', 'max:100'],
+            'addrPostalCode' => ['required', 'string', 'max:20'],
+            'addrAddress'    => ['required', 'string', 'max:500'],
+        ], [
+            'addrProvince.required'   => 'Provinsi wajib diisi.',
+            'addrCity.required'       => 'Kota wajib diisi.',
+            'addrDistrict.required'   => 'Kecamatan wajib diisi.',
+            'addrPostalCode.required' => 'Kode pos wajib diisi.',
+            'addrAddress.required'    => 'Alamat lengkap wajib diisi.',
+        ]);
+
+        $user = Auth::user();
+        if (!$user instanceof User) {
+            return;
+        }
+
+        ShipmentAddress::query()->updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'province'    => $this->addrProvince,
+                'city'        => $this->addrCity,
+                'district'    => $this->addrDistrict,
+                'postal_code' => $this->addrPostalCode,
+                'address'     => $this->addrAddress,
+            ]
         );
-    }
 
-    #[On('shipping-address:created')]
-    public function onShipmentAddressCreated(int $shipmentAddressId): void
-    {
-        // Trigger re-render so the list refreshes.
-    }
-
-    #[On('shipping-address:updated')]
-    public function onShipmentAddressUpdated(int $shipmentAddressId): void
-    {
-        // Trigger re-render so the list refreshes.
-    }
-
-    #[On('shipping-address:deleted')]
-    public function onShipmentAddressDeleted(int $shipmentAddressId): void
-    {
-        // Trigger re-render so the list refreshes.
+        session()->flash('success', 'Alamat pengiriman berhasil disimpan.');
     }
 
     public function render()
     {
-        return view('user.dashboard.profile-page', [
-            'addresses' => $this->shipmentAddresses,
-        ]);
+        return view('user.dashboard.profile-page');
     }
 }

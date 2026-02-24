@@ -19,15 +19,19 @@ Route::get('/', Welcome::class)->name('welcome');
 Route::get('/produk', Cari::class)->name('produk.cari');
 Route::get('/produk/detail/{slug}', Detail::class)->name('produk.detail');
 Route::get('/tentang', [HomeController::class, 'tentang'])->name('tentang');
-Route::get('/keranjang', Cart::class)->name('cart.index');
-
-Route::middleware('auth')->group(function () {
+// Customer-only routes — harus login & memiliki role 'customer'
+Route::middleware(['auth', 'check.user.role'])->group(function () {
+    Route::get('/keranjang', Cart::class)->name('cart.index');
     Route::get('/user/dashboard', Dashboard::class)->name('user.dashboard');
-    Route::get('/vendor/dashboard', VendorDashboard::class)->name('vendor.dashboard');
 
     // Payment
     Route::get('/pembayaran/finish', [PaymentRedirectController::class, 'finish'])->name('payment.finish');
     Route::get('/pembayaran/{orderId}', PaymentPage::class)->name('payment.page');
+});
+
+// Vendor-only routes — harus login & memiliki role 'vendor'
+Route::middleware(['auth', 'check.vendor.role'])->group(function () {
+    Route::get('/vendor/dashboard', VendorDashboard::class)->name('vendor.dashboard');
 });
 
 // Midtrans Webhook (tanpa auth, tanpa CSRF)

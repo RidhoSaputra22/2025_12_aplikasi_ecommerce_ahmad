@@ -112,26 +112,13 @@ $statusColors = [
                     <div class="flex items-center gap-3">
                         {{-- Upload proof button for pending payments --}}
                         @if ($order->payment && in_array($order->payment->status->value, ['pending', 'failed']))
-                        {{-- Show admin bank account info --}}
-                        @php
-                        $adminBanks = \App\Models\AdminBankAccount::active()->get();
-                        @endphp
-                        @if ($adminBanks->isNotEmpty())
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500">Transfer ke:</span>
-                            @foreach ($adminBanks as $bank)
-                            <span
-                                class="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs">
-                                <strong>{{ $bank->bank_name }}</strong> {{ $bank->account_number }}
-                                ({{ $bank->account_holder }})
-                            </span>
-                            @endforeach
-                        </div>
-                        @endif
-                        <button type="button" wire:click="openPaymentProofModal({{ $order->id }})"
-                            class="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-semibold hover:opacity-90">
-                            Upload Bukti Bayar
-                        </button>
+                        <a href="{{ route('payment.page', ['orderId' => $order->id]) }}"
+                            class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                            </svg>
+                            Bayar Sekarang
+                        </a>
                         @elseif ($order->payment && $order->payment->status->value === 'waiting_confirmation')
                         <span class="text-xs text-blue-600 font-medium">
                             <svg class="inline w-4 h-4 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

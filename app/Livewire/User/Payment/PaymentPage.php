@@ -63,7 +63,8 @@ class PaymentPage extends Component
             'payment',
             'orderVendors.vendor',
             'orderVendors.orderItems.productVariant.product.productImages',
-            'orderVendors.shipment',
+            'orderVendors.shipment.shipmentCourier',
+            'orderVendors.shipment.shipmentAddress',
         ])
             ->where('id', $this->orderId)
             ->where('user_id', Auth::id())
@@ -134,20 +135,32 @@ class PaymentPage extends Component
     }
 
     /**
-     * Pilih pembayaran manual (redirect ke upload bukti).
+     * Sync status pembayaran dari Midtrans.
+     * Dipanggil setelah redirect dari Snap atau secara manual.
      */
-    public function payManually(): void
+    public function syncPaymentStatus(): void
     {
-        $order = $this->getOrder();
+        try {
+            $order = $this->getOrder();
 
-        if (!$order) {
-            return;
+            if (!$order || !$order->payment || !$order->payment->snap_token) {
+                return;
+            }
+
+            if ($order->payment->status === PaymentStatus::Success) {
+                return;
+            }
+
+            /** @var PaymentService $paymentService */
+            $paymentService = app(PaymentService::class);
+            $paymentService->syncPaymentStatus($order);
+
+        } catch (\Exception $e) {
+            Log::channel('payment')->warning('Failed to sync payment status from page', [
+                'order_id' => $this->orderId,
+                'error' => $e->getMessage(),
+            ]);
         }
-
-        $this->redirectRoute('user.dashboard', [
-            'tab' => 'order-detail',
-            'order_id' => $order->id,
-        ]);
     }
 
     public function render()

@@ -3,6 +3,7 @@
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MidtransWebhookController;
 use App\Http\Controllers\PaymentRedirectController;
+use App\Http\Controllers\Vendor\OrderReportPdfController;
 use App\Livewire\User\Auth\Login;
 use App\Livewire\User\Auth\Regist;
 use App\Livewire\User\Cart\Cart;
@@ -32,6 +33,7 @@ Route::middleware(['auth', 'check.user.role'])->group(function () {
 // Vendor-only routes — harus login & memiliki role 'vendor'
 Route::middleware(['auth', 'check.vendor.role'])->group(function () {
     Route::get('/vendor/dashboard', VendorDashboard::class)->name('vendor.dashboard');
+    Route::get('/vendor/reports/orders/pdf', OrderReportPdfController::class)->name('vendor.orders.report.pdf');
 });
 
 // Midtrans Webhook (tanpa auth, tanpa CSRF)

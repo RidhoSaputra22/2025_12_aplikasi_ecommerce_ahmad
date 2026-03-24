@@ -2,13 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Review;
-use App\Models\Product;
 use App\Models\Category;
-use App\Models\ProductImage;
-use App\Models\ProductVariant;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Support\Str;
 
 class CategorySeeder extends Seeder
 {
@@ -17,89 +13,19 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        //
-        Category::factory()
-            ->has(
-                Product::factory()
-                ->count(10)
-                ->has(
-                    ProductImage::factory()
-                    ->count(1)
-                )
-                ->has(
-                    ProductVariant::factory()->count(1)
-                )
-                ->has(
-                    Review::factory()->count(5)
-                )
+        $categories = [
+            'Kerajinan Lokal',
+            'Sayur dan Buah',
+            'Makanan Ringan',
+            'Pakaian dan Aksesoris',
+            'Produk Digital',
+        ];
 
-            )
-            ->create([
-                'name' => 'Kerajinan Lokal',
-            ]);
-        Category::factory()
-            ->has(
-                Product::factory()
-                ->count(10)
-                ->has(
-                    ProductImage::factory()
-                    ->count(1)
-                )
-                ->has(
-                    ProductVariant::factory()->count(1)
-                )
-
-            )
-            ->create([
-                'name' => 'Sayur dan Buah',
-            ]);
-        Category::factory()
-            ->has(
-                Product::factory()
-                ->count(10)
-                ->has(
-                    ProductImage::factory()
-                    ->count(1)
-                )
-                ->has(
-                    ProductVariant::factory()->count(1)
-                )
-
-            )
-            ->create([
-                'name' => 'Makanan Ringan',
-            ]);
-        Category::factory()
-            ->has(
-                Product::factory()
-                ->count(10)
-                ->has(
-                    ProductImage::factory()
-                    ->count(1)
-                )
-                ->has(
-                    ProductVariant::factory()->count(1)
-                )
-
-            )
-            ->create([
-                'name' => 'Pakaian dan Aksesoris',
-            ]);
-        Category::factory()
-            ->has(
-                Product::factory()
-                ->count(10)
-                ->has(
-                    ProductImage::factory()
-                    ->count(1)
-                )
-                ->has(
-                    ProductVariant::factory()->count(1)
-                )
-
-            )
-            ->create([
-                'name' => 'Produk Digital',
-            ]);
+        foreach ($categories as $categoryName) {
+            Category::query()->updateOrCreate(
+                ['slug' => Str::slug($categoryName)],
+                ['name' => $categoryName]
+            );
+        }
     }
 }

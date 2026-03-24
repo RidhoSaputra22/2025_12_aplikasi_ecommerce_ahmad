@@ -3,18 +3,35 @@
         'pending' => 'bg-yellow-100 text-yellow-800',
         'processed' => 'bg-blue-100 text-blue-800',
         'shipped' => 'bg-indigo-100 text-indigo-800',
+        'delivered' => 'bg-violet-100 text-violet-800',
         'completed' => 'bg-green-100 text-green-800',
         'cancelled' => 'bg-red-100 text-red-800',
     ];
 @endphp
 
 <div class="p-6 rounded-xl">
+    @php
+        $reportParams = [];
+
+        if (filled($selectedStatus)) {
+            $reportParams['status'] = $selectedStatus;
+        }
+
+        if (filled($search)) {
+            $reportParams['search'] = $search;
+        }
+    @endphp
+
     <div class="flex flex-wrap items-start justify-between gap-4">
         <div class="mb-6">
             <h2 class="text-xl font-semibold">Daftar Pesanan</h2>
             <p class="text-sm text-gray-500">Pesanan yang masuk ke toko Anda. Klik untuk melihat detail.</p>
         </div>
         <div class="flex gap-3 flex-wrap">
+            <a href="{{ route('vendor.orders.report.pdf', $reportParams) }}" target="_blank" rel="noopener noreferrer"
+                class="inline-flex items-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
+                Laporan PDF
+            </a>
             @component('components.form.input', [
                 'label' => '',
                 'type' => 'text',

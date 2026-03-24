@@ -37,10 +37,6 @@
     @yield('content')
     @endisset
 
-    <div class="fixed bottom-5 right-5 bg-amber-300 z-100 p-3 rounded-2xl font-semibold">
-        Aplikasi Demo
-    </div>
-
 
     @livewire('global-modal')
 

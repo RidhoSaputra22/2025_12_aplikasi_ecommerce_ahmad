@@ -85,18 +85,18 @@ class DatabaseSeeder extends Seeder
             ],
         ]);
 
-        Product::factory()
-            ->count(10)
-            ->has(
-                ProductImage::factory()
-                    ->count(1)
-            )
-            ->has(
-                ProductVariant::factory()->count(1)
-            )
-            ->create([
-                'vendor_id' => 1,
-            ]);
+        // Product::factory()
+        //     ->count(10)
+        //     ->has(
+        //         ProductImage::factory()
+        //             ->count(1)
+        //     )
+        //     ->has(
+        //         ProductVariant::factory()->count(1)
+        //     )
+        //     ->create([
+        //         'vendor_id' => 1,
+        //     ]);
 
         Shipment::factory(5)->create();
 
@@ -111,8 +111,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CategorySeeder::class,
             AdminBankAccountSeeder::class,
-            // ProductSeeder::class,
-            // ReviewSeeder::class,
+            ProductSeeder::class,
+            ReviewSeeder::class,
         ]);
 
     }

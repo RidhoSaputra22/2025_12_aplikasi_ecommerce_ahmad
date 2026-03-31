@@ -3,7 +3,7 @@
         <div class="flex-1">
             <div class="flex items-center gap-2">
                 <div class="space-y-2   ">
-                    <h1 class="text-3xl font-semibold">Toko Desa</h1>
+                    <h1 class="text-3xl font-semibold">Toko Ga`de</h1>
                     <h1 class="text-sm/tight font-light">
                         km 10 no.32A, Jl. Perintis Kemerdekaan, Tamalanrea Jaya, Kec. Tamalanrea, Kota Makassar,
                         Sulawesi Selatan 90245
@@ -25,7 +25,7 @@
     </div>
     <div class="py-3 flex border-t border-gray-300 text-sm font-light">
         <div class="flex-1">
-            &copy; 2025 Toko Desa - Universitas Bosowa Makassar
+            &copy; 2025 Toko Ga`de - Universitas Bosowa Makassar
         </div>
         <div class="flex gap-5">
             <a href="https://www.instagram.com/klinikgoaria/" target="_blank">

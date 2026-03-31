@@ -14,7 +14,7 @@ return request()->routeIs($patterns);
         <div class="flex items-center gap-2">
             <!-- <img src="{{ asset('images/logo.jpg') }}" alt="" class="w-14 aspect-square"> -->
             <a href="{{ route('welcome') }}" class="">
-                <h1 class="text-xl font-semibold ">Toko Desa</h1>
+                <h1 class="text-xl font-semibold ">Toko Ga`de</h1>
                 <h1 class="text-sm/tight font-light">Melayani sejak 2010</h1>
             </a>
         </div>

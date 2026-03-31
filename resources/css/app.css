@@ -9,14 +9,17 @@
 @theme {
     --font-sans: "Poppins", sans-serif;
 
-    --color-primary: #00a435;
+     /* BRAND COLOR TOKO GA'DE */
+    --color-primary: #2563eb;   /* biru dominan */
+    --color-secondary: #ec4899; /* pink */
+    --color-accent: #ef4444;    /* merah */
 
-    --swiper-pagination-color: #000;
+    --swiper-pagination-color: #fff;
     --swiper-pagination-bullet-size: 8px;
     --swiper-pagination-bullet-width: 8px;
     --swiper-pagination-bullet-height: 8px;
-    --swiper-pagination-bullet-inactive-color: #000;
-    --swiper-pagination-bullet-inactive-opacity: 0.2;
+    --swiper-pagination-bullet-inactive-color: #93c5fd;
+    --swiper-pagination-bullet-inactive-opacity: 0.4;
     --swiper-pagination-bullet-opacity: 1;
     --swiper-pagination-bullet-horizontal-gap: 4px;
     --swiper-pagination-bullet-vertical-gap: 6px;

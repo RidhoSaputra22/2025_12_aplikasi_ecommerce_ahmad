@@ -1,7 +1,7 @@
 <section class="flex h-screen  overflow-hidden">
     <div class="flex-2 p-12 ">
         <div>
-            <h1 class="text-2xl/tight font-semibold">Toko Desa</h1>
+            <h1 class="text-2xl/tight font-semibold">Toko Ga`de</h1>
             <p class="text-lg font-light">Melayani Sejak 2010</p>
         </div>
         <form action="" class="mt-30 space-y-6 max-w-xl mx-auto" wire:submit.prevent="login">
@@ -63,7 +63,7 @@
         <div class="space-y-3">
             <h1 class="text-6xl/snug font-semibold">Bersama Membantu Membangun Desa</h1>
             <p class="text-lg font-light">
-                Toko Desa hadir untuk mendukung perekonomian desa dengan menyediakan platform e-commerce yang
+                Toko Ga`de hadir untuk mendukung perekonomian desa dengan menyediakan platform e-commerce yang
                 memudahkan
                 masyarakat desa dalam mengakses produk berkualitas dari berbagai daerah. Mari bergabung bersama kami
                 dalam

@@ -12,32 +12,32 @@
             [
             'name' => 'Budi Santoso',
             'store' => 'Kerajinan Bambu Asli',
-            'review' => 'Sudah lima tahun bergabung dengan Toko Desa, penjualan saya meningkat pesat berkat
+            'review' => 'Sudah lima tahun bergabung dengan Toko Ga`de, penjualan saya meningkat pesat berkat
             platform ini.'
             ],
             [
             'name' => 'Siti Aminah',
             'store' => 'Tenun Tradisional Lombok',
-            'review' => 'Saya ingat pertama kali bergabung dengan Toko Desa, saya merasa ragu. Namun, setelah
+            'review' => 'Saya ingat pertama kali bergabung dengan Toko Ga`de, saya merasa ragu. Namun, setelah
             melihat peningkatan penjualan dan dukungan yang saya terima, saya yakin ini adalah keputusan
             terbaik yang pernah saya buat.'
             ],
             [
             'name' => 'Agus Wijaya',
             'store' => 'Kuliner Khas Jogja',
-            'review' => 'Toko Desa telah membantu saya menjangkau pelanggan di seluruh Indonesia. Saya
+            'review' => 'Toko Ga`de telah membantu saya menjangkau pelanggan di seluruh Indonesia. Saya
             sangat berterima kasih atas kesempatan ini.'
             ],
             [
             'name' => 'Dewi Lestari',
             'store' => 'Aksesoris Handmade Bali',
-            'review' => 'Bergabung dengan Toko Desa adalah salah satu keputusan terbaik yang saya buat untuk
+            'review' => 'Bergabung dengan Toko Ga`de adalah salah satu keputusan terbaik yang saya buat untuk
             bisnis saya. Platform ini sangat mudah digunakan dan tim support-nya sangat responsif.'
             ],
             [
             'name' => 'Rina Marlina',
             'store' => 'Produk Herbal Nusantara',
-            'review' => 'Mengenalkan produk herbal saya melalui Toko Desa telah membuka banyak pintu peluang baru. Saya
+            'review' => 'Mengenalkan produk herbal saya melalui Toko Ga`de telah membuka banyak pintu peluang baru. Saya
             sangat senang dengan hasilnya.'
             ]
             ]

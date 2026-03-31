@@ -11,7 +11,7 @@
                     <div class="grid h-full max-w-4xl mx-auto place-content-center">
                         <h1
                             class="text-6xl font-semibold tracking-tighter text-center text-white capitalize wrap-break-word md:text-8xl">
-                            Selamat Datang di website TokoDesa
+                            Selamat Datang di website Toko Ga`de
                         </h1>
                     </div>
                 </div>
@@ -25,7 +25,7 @@
                         <div class="space-y-8">
                             <h1
                                 class="text-6xl font-semibold tracking-tighter text-center text-white capitalize wrap-break-word lg:text-left md:text-8xl">
-                                Kerajinan Desa
+                                Temukan Belanjaan yang kamu mau disini
                             </h1>
                             <div class="grid grid-cols-1 lg:grid-cols-2">
                                 <div class="px-10 lg:px-0">
@@ -57,11 +57,12 @@
                         <div class="space-y-8">
                             <h1
                                 class="text-6xl font-semibold tracking-tighter text-center text-white capitalize wrap-break-word md:text-8xl">
-                                Pasar Desa
+                                Pengiriman Cepat dan Terpercaya
                             </h1>
                             <div class="w-full px-10 mx-auto lg:w-1/2 lg:px-0">
                                 <p class="text-xl font-light leading-snug text-center text-white md:text-2xl">
-                                    Dapatkan berbagai kebutuhan sehari-hari langsung dari tangan petani dan nelayan kita
+                                    Kami bekerja sama dengan jasa pengiriman terpercaya untuk memastikan produk Anda
+                                    sampai dengan cepat dan aman ke tangan pelanggan.
                                 </p>
                             </div>
                             <div class="flex justify-center">

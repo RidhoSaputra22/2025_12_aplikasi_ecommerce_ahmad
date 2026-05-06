@@ -7,6 +7,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\VendorWalletTransactionType;
 use App\Models\VendorWallet;
+use App\Services\AdminFeeService;
 use App\Services\Payment\PaymentService;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -37,6 +38,16 @@ class OrdersTable
                     ->numeric()
                     ->money('IDR')
                     ->sortable(),
+                TextColumn::make('admin_fee_total')
+                    ->label('Potongan Admin')
+                    ->getStateUsing(fn ($record) => app(AdminFeeService::class)->getOrderAdminFeeTotal($record))
+                    ->money('IDR')
+                    ->toggleable(),
+                TextColumn::make('vendor_payout_total')
+                    ->label('Diterima Vendor')
+                    ->getStateUsing(fn ($record) => app(AdminFeeService::class)->getOrderVendorPayoutTotal($record))
+                    ->money('IDR')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge(),
@@ -175,25 +186,48 @@ class OrdersTable
                     ->requiresConfirmation()
                     ->modalHeading('Cairkan Dana ke Vendor')
                     ->modalDescription(function ($record) {
+                        $adminFeeService = app(AdminFeeService::class);
                         $vendors = $record->orderVendors->where('is_disbursed', false);
-                        $lines = ['Pesanan: '.$record->order_number, '', 'Vendor yang akan dicairkan:'];
+                        $lines = [
+                            'Pesanan: '.$record->order_number,
+                            'Catatan: potongan admin dihitung dari subtotal produk vendor, tidak termasuk ongkir.',
+                            '',
+                            'Vendor yang akan dicairkan:',
+                        ];
                         foreach ($vendors as $ov) {
+                            $breakdown = $adminFeeService->resolveBreakdown($ov);
                             $vendorName = $ov->vendor?->store_name ?? 'Vendor #'.$ov->vendor_id;
                             $bankInfo = '';
                             $bankAccount = $ov->vendor?->vendorBankAccounts()?->where('is_active', true)->first();
                             if ($bankAccount) {
                                 $bankInfo = " ({$bankAccount->bank_name} - {$bankAccount->account_number} a.n. {$bankAccount->account_holder})";
                             }
-                            $lines[] = "• {$vendorName}: Rp ".number_format((float) $ov->subtotal, 0, ',', '.').$bankInfo;
+                            $lines[] = "• {$vendorName}: subtotal Rp ".number_format((float) $breakdown['gross_amount'], 0, ',', '.')
+                                .', potongan admin '.number_format((float) $breakdown['admin_fee_percentage'], 2, ',', '.').'%'
+                                .' = Rp '.number_format((float) $breakdown['admin_fee_amount'], 0, ',', '.')
+                                .', vendor terima Rp '.number_format((float) $breakdown['vendor_payout_amount'], 0, ',', '.')
+                                .$bankInfo;
                         }
 
                         return implode("\n", $lines);
                     })
                     ->action(function ($record) {
                         DB::transaction(function () use ($record) {
+                            $adminFeeService = app(AdminFeeService::class);
                             $undisbursedVendors = $record->orderVendors()->where('is_disbursed', false)->get();
 
                             foreach ($undisbursedVendors as $orderVendor) {
+                                $breakdown = $adminFeeService->resolveBreakdown($orderVendor);
+
+                                if (
+                                    $orderVendor->admin_fee_percentage === null
+                                    || $orderVendor->admin_fee_amount === null
+                                    || $orderVendor->vendor_payout_amount === null
+                                ) {
+                                    $orderVendor = $adminFeeService->syncOrderVendor($orderVendor);
+                                    $breakdown = $adminFeeService->resolveBreakdown($orderVendor);
+                                }
+
                                 // Get or create vendor wallet
                                 $wallet = VendorWallet::firstOrCreate(
                                     ['vendor_id' => $orderVendor->vendor_id],
@@ -203,16 +237,21 @@ class OrdersTable
                                 // Add credit transaction
                                 $wallet->transactions()->create([
                                     'type' => VendorWalletTransactionType::Credit->value,
-                                    'amount' => $orderVendor->subtotal,
-                                    'description' => 'Pencairan dari pesanan #'.$record->order_number,
+                                    'amount' => $breakdown['vendor_payout_amount'],
+                                    'description' => 'Pencairan bersih dari pesanan #'.$record->order_number
+                                        .' (subtotal Rp '.number_format((float) $breakdown['gross_amount'], 0, ',', '.')
+                                        .', potongan admin Rp '.number_format((float) $breakdown['admin_fee_amount'], 0, ',', '.').')',
                                     'reference_id' => 'ORDER-'.$record->id.'-VENDOR-'.$orderVendor->vendor_id,
                                 ]);
 
                                 // Update wallet balance
-                                $wallet->increment('balance', $orderVendor->subtotal);
+                                $wallet->increment('balance', $breakdown['vendor_payout_amount']);
 
                                 // Mark as disbursed
                                 $orderVendor->update([
+                                    'admin_fee_percentage' => $breakdown['admin_fee_percentage'],
+                                    'admin_fee_amount' => $breakdown['admin_fee_amount'],
+                                    'vendor_payout_amount' => $breakdown['vendor_payout_amount'],
                                     'is_disbursed' => true,
                                     'disbursed_at' => now(),
                                     'disbursed_by' => Auth::id(),
@@ -226,10 +265,15 @@ class OrdersTable
                                         'type' => 'App\\Notifications\\VendorDisbursement',
                                         'data' => json_encode([
                                             'title' => 'Dana Dicairkan',
-                                            'message' => 'Dana sebesar Rp '.number_format((float) $orderVendor->subtotal, 0, ',', '.').' dari pesanan #'.$record->order_number.' telah dicairkan ke wallet Anda.',
+                                            'message' => 'Dana bersih sebesar Rp '.number_format((float) $breakdown['vendor_payout_amount'], 0, ',', '.')
+                                                .' dari pesanan #'.$record->order_number.' telah dicairkan ke wallet Anda setelah potongan admin Rp '
+                                                .number_format((float) $breakdown['admin_fee_amount'], 0, ',', '.').'.',
                                             'order_id' => $record->id,
                                             'order_number' => $record->order_number,
-                                            'amount' => $orderVendor->subtotal,
+                                            'amount' => $breakdown['vendor_payout_amount'],
+                                            'gross_amount' => $breakdown['gross_amount'],
+                                            'admin_fee_amount' => $breakdown['admin_fee_amount'],
+                                            'admin_fee_percentage' => $breakdown['admin_fee_percentage'],
                                         ]),
                                     ]);
                                 }

@@ -12,6 +12,7 @@ use App\Models\Shipment;
 use App\Models\ShipmentAddress;
 use App\Models\ShipmentCourier;
 use App\Models\User;
+use App\Services\AdminFeeService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -282,6 +283,8 @@ class CartSummary extends Component
                 'payment_status' => 'pending',
             ]);
 
+            $adminFeeService = app(AdminFeeService::class);
+
             foreach ($vendorsGrouped as $vendorId => $items) {
                 if ((int) $vendorId <= 0) {
                     throw ValidationException::withMessages([
@@ -297,6 +300,8 @@ class CartSummary extends Component
                     'subtotal' => $vendorSubtotal,
                     'status' => 'pending',
                 ]);
+
+                $adminFeeService->syncOrderVendor($orderVendor);
 
                 foreach ($items as $cartItem) {
                     $variant = $cartItem->productVariant;

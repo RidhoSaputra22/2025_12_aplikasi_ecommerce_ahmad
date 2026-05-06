@@ -14,6 +14,9 @@ class OrderVendor extends Model
         'order_id',
         'vendor_id',
         'subtotal',
+        'admin_fee_percentage',
+        'admin_fee_amount',
+        'vendor_payout_amount',
         'status',
         'is_disbursed',
         'disbursed_at',
@@ -24,6 +27,9 @@ class OrderVendor extends Model
 
     protected $casts = [
         'status' => OrderVendorStatus::class,
+        'admin_fee_percentage' => 'float',
+        'admin_fee_amount' => 'float',
+        'vendor_payout_amount' => 'float',
         'is_disbursed' => 'boolean',
         'disbursed_at' => 'datetime',
         'vendor_confirmed_at' => 'datetime',

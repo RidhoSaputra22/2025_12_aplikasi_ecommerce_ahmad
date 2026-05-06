@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Orders\Pages;
 
 use App\Models\ProductVariant;
+use App\Services\AdminFeeService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\CreateRecord;
@@ -36,6 +37,8 @@ class CreateOrder extends CreateRecord
                 'status' => \App\Enums\OrderVendorStatus::Pending,
             ]);
 
+            $adminFeeService = app(AdminFeeService::class);
+
             // Calculate subtotal and create order items
             $subtotal = 0;
             foreach ($data['items'] as $item) {
@@ -56,6 +59,7 @@ class CreateOrder extends CreateRecord
 
             // Update order vendor subtotal
             $orderVendor->update(['subtotal' => $subtotal]);
+            $adminFeeService->syncOrderVendor($orderVendor);
 
             // Create shipment
             $shippingCost = $data['shipping_cost'] ?? 0;

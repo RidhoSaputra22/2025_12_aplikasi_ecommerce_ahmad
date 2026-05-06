@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Orders\Pages;
 
 use App\Models\ProductVariant;
+use App\Services\AdminFeeService;
 use Filament\Actions\DeleteAction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
@@ -59,6 +60,8 @@ class EditOrder extends EditRecord
     {
         DB::beginTransaction();
         try {
+            $adminFeeService = app(AdminFeeService::class);
+
             // Update order main data
             $record->update([
                 'user_id' => $data['user_id'],
@@ -97,6 +100,7 @@ class EditOrder extends EditRecord
 
             // Update order vendor subtotal
             $orderVendor->update(['subtotal' => $subtotal, 'vendor_id' => $data['vendor_id']]);
+            $adminFeeService->syncOrderVendor($orderVendor);
 
             // Update or create shipment
             $shipment = $orderVendor->shipment;

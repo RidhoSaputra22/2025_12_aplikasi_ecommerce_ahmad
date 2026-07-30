@@ -15,6 +15,7 @@ use App\Livewire\User\Cart\CartSummary;
 use App\Livewire\User\Dashboard\HistoryPage;
 use App\Livewire\User\Dashboard\OrderDetailPage;
 use App\Livewire\User\Dashboard\TrackingPage;
+use App\Livewire\User\Home\Welcome;
 use App\Livewire\User\Payment\PaymentPage;
 use App\Livewire\User\Products\Cari;
 use App\Livewire\User\Products\Detail;
@@ -126,6 +127,14 @@ class CustomerScenarioTest extends TestCase
             ->assertOk()
             ->assertSee('Toko Ga')
             ->assertSee('Selamat Datang di website Toko Ga');
+
+        ['vendor' => $vendor] = $this->vendorActor();
+        ['product' => $product] = $this->productFor($vendor, ['name' => 'Produk Tanpa Gambar']);
+
+        Livewire::test(Welcome::class)
+            ->call('loadInitialData')
+            ->assertSee($product->name)
+            ->assertSee('images/product-paceholder.jpg');
     }
 
     public function test_06_pencarian_produk_menampilkan_kata_kunci_yang_sesuai(): void

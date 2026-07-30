@@ -2,7 +2,7 @@
     <div class="flex-2 p-12 ">
         <div>
             <h1 class="text-2xl/tight font-semibold">Toko Ga`de</h1>
-            <p class="text-lg font-light">Melayani Sejak 2010</p>
+           
         </div>
         <form action="" class="mt-30 space-y-6 max-w-xl mx-auto" wire:submit.prevent="login">
 

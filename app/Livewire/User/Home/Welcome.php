@@ -62,7 +62,7 @@ class Welcome extends Component
 
         $products = $this->selectedCategoryId > 0
             ? Product::query()
-                ->with(['category', 'vendor'])
+                ->with(['category', 'vendor', 'productImages'])
                 ->where('category_id', $this->selectedCategoryId)
                 ->where($activeProducts)
                 ->latest()
@@ -71,7 +71,7 @@ class Welcome extends Component
             : collect();
 
         $produkUnggulan = Product::query()
-            ->with(['category', 'vendor'])
+            ->with(['category', 'vendor', 'productImages'])
             ->where('price', '>=', 400000)
             ->where($activeProducts)
             ->latest()

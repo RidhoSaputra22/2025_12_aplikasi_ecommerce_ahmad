@@ -54,10 +54,17 @@
             @foreach ($products as $key => $product)
             <a href="{{ route('produk.detail', ['slug' => $product->slug]) }}" class="" wire:key="product-{{ $product->id }}">
                 <div class="relative">
-                    <img src="{{ asset('images/product-paceholder.jpg') }}" alt="" class="rounded-xl">
+                    @php
+                        $image = $product->productImages->first();
+                        $imageUrl = $image?->image
+                            ? Storage::url($image->image)
+                            : asset('images/product-paceholder.jpg');
+                    @endphp
+                    <img src="{{ $imageUrl }}" alt="{{ $product->name }}"
+                        class="rounded-xl w-full aspect-square object-cover">
                       <div
                             class="absolute top-2 left-2 bg-primary px-3 py-1 rounded-md text-sm font-medium text-white">
-                            {{ $product->category->name }}</div>
+                            {{ $product->category?->name ?? 'Produk' }}</div>
                 </div>
                 <div class="mt-4 space-y-2">
                     <h1 class="text-xl font-light text-overflow-ellipsis truncate uppercase">
@@ -112,10 +119,17 @@
         @foreach ($produkUnggulan as $key => $product)
           <a href="{{ route('produk.detail', ['slug' => $product->slug]) }}" class="" wire:key="product-{{ $product->id }}">
                 <div class="relative">
-                    <img src="{{ asset('images/product-paceholder.jpg') }}" alt="" class="rounded-xl">
+                    @php
+                        $image = $product->productImages->first();
+                        $imageUrl = $image?->image
+                            ? Storage::url($image->image)
+                            : asset('images/product-paceholder.jpg');
+                    @endphp
+                    <img src="{{ $imageUrl }}" alt="{{ $product->name }}"
+                        class="rounded-xl w-full aspect-square object-cover">
                       <div
                             class="absolute top-2 left-2 bg-primary px-3 py-1 rounded-md text-sm font-medium text-white">
-                            {{ $product->category->name }}</div>
+                            {{ $product->category?->name ?? 'Produk' }}</div>
                 </div>
                 <div class="mt-4 space-y-2">
                     <h1 class="text-xl font-light text-overflow-ellipsis truncate uppercase">

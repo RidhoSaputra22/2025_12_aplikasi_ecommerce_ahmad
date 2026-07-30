@@ -23,8 +23,8 @@ composer test
 Tanggal verifikasi: 31 Juli 2026.
 
 ```text
-Tests: 74 passed (255 assertions)
-Duration: 5.71s
+Tests: 74 passed (257 assertions)
+Duration: 5.86s
 ```
 
 Dari hasil tersebut, 63 pengujian adalah skenario pada dokumen acuan dan 11

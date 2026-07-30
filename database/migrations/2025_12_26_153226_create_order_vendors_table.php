@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('vendor_id')->constrained()->restrictOnDelete();
             $table->decimal('subtotal', 15, 2);
-            $table->enum('status', ['pending', 'processed', 'shipped', 'completed'])->default('pending');
+            $table->enum('status', ['pending', 'processed', 'shipped', 'delivered', 'completed'])->default('pending');
             $table->timestamps();
         });
     }

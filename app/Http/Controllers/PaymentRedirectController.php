@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Services\Payment\PaymentService;
 use Illuminate\Http\Request;
@@ -61,7 +62,7 @@ class PaymentRedirectController extends Controller
                     'tab' => 'order-detail',
                     'order_id' => $order->id,
                 ])
-                ->with('success', $this->getFinishMessage($transactionStatus));
+                ->with('success', $this->getFinishMessage($order));
         }
 
         return redirect()->route('user.dashboard', ['tab' => 'history'])
@@ -71,13 +72,12 @@ class PaymentRedirectController extends Controller
     /**
      * Pesan berdasarkan status transaksi.
      */
-    private function getFinishMessage(string $status): string
+    private function getFinishMessage(Order $order): string
     {
-        return match ($status) {
-            'settlement', 'capture' => 'Pembayaran berhasil! Pesanan Anda sedang diproses.',
-            'pending' => 'Pembayaran Anda sedang diproses. Silakan selesaikan pembayaran sesuai instruksi.',
-            'deny', 'cancel', 'expire' => 'Pembayaran gagal atau dibatalkan. Silakan coba lagi.',
-            default => 'Status pembayaran sedang diproses.',
+        return match ($order->payment?->status) {
+            PaymentStatus::Success => 'Pembayaran berhasil! Pesanan Anda sedang diproses.',
+            PaymentStatus::Failed => 'Pembayaran gagal atau dibatalkan. Silakan coba lagi.',
+            default => 'Pembayaran Anda sedang diproses. Silakan selesaikan pembayaran sesuai instruksi.',
         };
     }
 }

@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Vendor\Dashboard;
 
+use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderVendorStatus;
 use App\Enums\ShipmentStatus;
 use App\Models\OrderVendor;
-use App\Models\Shipment;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 class OrderDetailPage extends Component
@@ -17,8 +20,9 @@ class OrderDetailPage extends Component
 
     public function mount(?int $orderId = null): void
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             $this->redirectRoute('user.login');
+
             return;
         }
 
@@ -27,12 +31,12 @@ class OrderDetailPage extends Component
 
     public function getOrderVendorProperty(): ?OrderVendor
     {
-        if (!$this->orderId || !Auth::check()) {
+        if (! $this->orderId || ! Auth::check()) {
             return null;
         }
 
         $vendor = Auth::user()?->vendor;
-        if (!$vendor) {
+        if (! $vendor) {
             return null;
         }
 
@@ -52,12 +56,29 @@ class OrderDetailPage extends Component
     public function processOrder(): void
     {
         $orderVendor = $this->orderVendor;
-        if (!$orderVendor || $orderVendor->status !== OrderVendorStatus::Pending) {
+        if (
+            ! $orderVendor
+            || $orderVendor->status !== OrderVendorStatus::Pending
+            || $orderVendor->order?->payment_status !== OrderPaymentStatus::Paid
+        ) {
             session()->flash('error', 'Pesanan tidak bisa diproses.');
+
             return;
         }
 
-        $orderVendor->update(['status' => OrderVendorStatus::Processed]);
+        $updated = OrderVendor::query()
+            ->whereKey($orderVendor->id)
+            ->where('status', OrderVendorStatus::Pending)
+            ->whereHas('order', fn ($query) => $query->where('payment_status', OrderPaymentStatus::Paid))
+            ->update(['status' => OrderVendorStatus::Processed]);
+
+        if ($updated !== 1) {
+            session()->flash('error', 'Status pesanan sudah berubah. Muat ulang halaman.');
+
+            return;
+        }
+
+        $orderVendor->refresh();
 
         // Notify customer
         $this->notifyCustomer($orderVendor, 'Pesanan Diproses', 'Pesanan Anda sedang diproses oleh vendor.');
@@ -68,8 +89,9 @@ class OrderDetailPage extends Component
     public function shipOrder(): void
     {
         $orderVendor = $this->orderVendor;
-        if (!$orderVendor || $orderVendor->status !== OrderVendorStatus::Processed) {
+        if (! $orderVendor || $orderVendor->status !== OrderVendorStatus::Processed) {
             session()->flash('error', 'Pesanan tidak bisa dikirim.');
+
             return;
         }
 
@@ -79,47 +101,94 @@ class OrderDetailPage extends Component
             'tracking_number.required' => 'Nomor resi wajib diisi.',
         ]);
 
-        $orderVendor->update(['status' => OrderVendorStatus::Shipped]);
+        $shipped = DB::transaction(function () use ($orderVendor): bool {
+            $lockedOrderVendor = OrderVendor::query()
+                ->whereKey($orderVendor->id)
+                ->where('status', OrderVendorStatus::Processed)
+                ->lockForUpdate()
+                ->first();
 
-        if ($orderVendor->shipment) {
-            $orderVendor->shipment->update([
+            if (! $lockedOrderVendor) {
+                return false;
+            }
+
+            $shipment = $lockedOrderVendor->shipment()->lockForUpdate()->first();
+            if (! $shipment) {
+                return false;
+            }
+
+            $lockedOrderVendor->update(['status' => OrderVendorStatus::Shipped]);
+            $shipment->update([
                 'tracking_number' => $this->tracking_number,
                 'status' => ShipmentStatus::Shipped,
                 'shipped_at' => now(),
             ]);
+
+            return true;
+        });
+
+        if (! $shipped) {
+            session()->flash('error', 'Data pengiriman tidak tersedia atau status pesanan sudah berubah.');
+
+            return;
         }
+
+        $orderVendor->refresh();
 
         // Check if all vendor orders shipped → update main order
         $this->updateMainOrderStatus($orderVendor);
 
         // Notify customer
-        $this->notifyCustomer($orderVendor, 'Pesanan Dikirim', 'Pesanan Anda telah dikirim. No Resi: ' . $this->tracking_number);
+        $this->notifyCustomer($orderVendor, 'Pesanan Dikirim', 'Pesanan Anda telah dikirim. No Resi: '.$this->tracking_number);
 
-        session()->flash('success', 'Pesanan berhasil dikirim dengan resi: ' . $this->tracking_number);
+        session()->flash('success', 'Pesanan berhasil dikirim dengan resi: '.$this->tracking_number);
     }
 
     public function confirmDelivery(): void
     {
         $orderVendor = $this->orderVendor;
 
-        if (!$orderVendor || $orderVendor->status !== OrderVendorStatus::Shipped) {
+        if (! $orderVendor || $orderVendor->status !== OrderVendorStatus::Shipped) {
             session()->flash('error', 'Pesanan tidak bisa dikonfirmasi tiba saat ini.');
+
             return;
         }
 
-        // Update shipment ke delivered
-        if ($orderVendor->shipment) {
-            $orderVendor->shipment->update([
+        $delivered = DB::transaction(function () use ($orderVendor): bool {
+            $lockedOrderVendor = OrderVendor::query()
+                ->whereKey($orderVendor->id)
+                ->where('status', OrderVendorStatus::Shipped)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $lockedOrderVendor) {
+                return false;
+            }
+
+            $shipment = $lockedOrderVendor->shipment()->lockForUpdate()->first();
+            if (! $shipment) {
+                return false;
+            }
+
+            $shipment->update([
                 'status' => ShipmentStatus::Delivered,
                 'delivered_at' => now(),
             ]);
+            $lockedOrderVendor->update([
+                'status' => OrderVendorStatus::Delivered,
+                'vendor_confirmed_at' => now(),
+            ]);
+
+            return true;
+        });
+
+        if (! $delivered) {
+            session()->flash('error', 'Status pesanan sudah berubah atau data pengiriman tidak tersedia.');
+
+            return;
         }
 
-        // Update order vendor ke delivered (belum completed — menunggu konfirmasi customer)
-        $orderVendor->update([
-            'status' => OrderVendorStatus::Delivered,
-            'vendor_confirmed_at' => now(),
-        ]);
+        $orderVendor->refresh();
 
         // Notify customer untuk konfirmasi penerimaan
         $this->notifyCustomer(
@@ -134,7 +203,7 @@ class OrderDetailPage extends Component
     protected function updateMainOrderStatus(OrderVendor $orderVendor): void
     {
         $order = $orderVendor->order;
-        if (!$order) {
+        if (! $order) {
             return;
         }
 
@@ -142,12 +211,12 @@ class OrderDetailPage extends Component
 
         // Jika semua shipped/delivered/completed → main order shipped
         $shippedStatuses = [OrderVendorStatus::Shipped, OrderVendorStatus::Delivered, OrderVendorStatus::Completed];
-        if ($allVendorOrders->every(fn($ov) => in_array($ov->status, $shippedStatuses))) {
+        if ($allVendorOrders->every(fn ($ov) => in_array($ov->status, $shippedStatuses))) {
             $order->update(['status' => 'shipped']);
         }
 
         // Jika semua sudah completed → main order completed
-        if ($allVendorOrders->every(fn($ov) => $ov->status === OrderVendorStatus::Completed)) {
+        if ($allVendorOrders->every(fn ($ov) => $ov->status === OrderVendorStatus::Completed)) {
             $order->update(['status' => 'completed']);
         }
     }
@@ -155,20 +224,27 @@ class OrderDetailPage extends Component
     protected function notifyCustomer(OrderVendor $orderVendor, string $title, string $message): void
     {
         $customer = $orderVendor->order?->user;
-        if (!$customer) {
+        if (! $customer) {
             return;
         }
 
-        $customer->notifications()->create([
-            'id' => \Illuminate\Support\Str::uuid(),
-            'type' => 'App\\Notifications\\OrderStatusUpdated',
-            'data' => json_encode([
-                'title' => $title,
-                'message' => $message,
-                'order_id' => $orderVendor->order_id,
-                'order_number' => $orderVendor->order?->order_number,
-            ]),
-        ]);
+        try {
+            $customer->notifications()->create([
+                'id' => Str::uuid(),
+                'type' => 'App\\Notifications\\OrderStatusUpdated',
+                'data' => json_encode([
+                    'title' => $title,
+                    'message' => $message,
+                    'order_id' => $orderVendor->order_id,
+                    'order_number' => $orderVendor->order?->order_number,
+                ]),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Gagal mengirim notifikasi status pesanan.', [
+                'order_vendor_id' => $orderVendor->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function render()

@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -16,20 +16,20 @@ return new class extends Migration
             $table->foreignId('confirmed_by')->nullable()->after('confirmed_at')->constrained('users')->nullOnDelete();
         });
 
-        // Update payments.status enum to include 'waiting_confirmation'
-        DB::statement("ALTER TABLE payments MODIFY COLUMN status ENUM('pending', 'waiting_confirmation', 'success', 'failed') DEFAULT 'pending'");
-
-        // Update orders.payment_status enum to include 'waiting_confirmation'
-        DB::statement("ALTER TABLE orders MODIFY COLUMN payment_status ENUM('pending', 'waiting_confirmation', 'paid', 'failed') DEFAULT 'pending'");
+        // MODIFY COLUMN is MySQL/MariaDB-specific. Fresh non-MySQL databases
+        // already receive the complete enum values from the create migrations.
+        if (in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
+            DB::statement("ALTER TABLE payments MODIFY COLUMN status ENUM('pending', 'waiting_confirmation', 'success', 'failed') DEFAULT 'pending'");
+            DB::statement("ALTER TABLE orders MODIFY COLUMN payment_status ENUM('pending', 'waiting_confirmation', 'paid', 'failed') DEFAULT 'pending'");
+        }
     }
 
     public function down(): void
     {
-        // Revert orders.payment_status enum
-        DB::statement("ALTER TABLE orders MODIFY COLUMN payment_status ENUM('pending', 'paid', 'failed') DEFAULT 'pending'");
-
-        // Revert payments.status enum
-        DB::statement("ALTER TABLE payments MODIFY COLUMN status ENUM('pending', 'success', 'failed') DEFAULT 'pending'");
+        if (in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
+            DB::statement("ALTER TABLE orders MODIFY COLUMN payment_status ENUM('pending', 'paid', 'failed') DEFAULT 'pending'");
+            DB::statement("ALTER TABLE payments MODIFY COLUMN status ENUM('pending', 'success', 'failed') DEFAULT 'pending'");
+        }
 
         Schema::table('payments', function (Blueprint $table) {
             $table->dropConstrainedForeignId('confirmed_by');

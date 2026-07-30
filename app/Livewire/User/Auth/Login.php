@@ -2,6 +2,7 @@
 
 namespace App\Livewire\User\Auth;
 
+use App\Enums\UserStatus;
 use App\Models\Vendor;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Validate;
@@ -22,6 +23,7 @@ class Login extends Component
         $credentials = [
             'email' => $this->email,
             'password' => $this->password,
+            'status' => UserStatus::Active->value,
         ];
 
         if (Auth::attempt($credentials)) {

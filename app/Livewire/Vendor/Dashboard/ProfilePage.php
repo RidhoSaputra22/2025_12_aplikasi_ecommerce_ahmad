@@ -7,6 +7,7 @@ use App\Models\Vendor;
 use App\Models\VendorAddress;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -15,29 +16,39 @@ class ProfilePage extends Component
 {
     // User fields
     public string $name = '';
+
     public string $email = '';
+
     public ?string $phone = null;
+
     public ?string $foto = null;
 
     // Vendor fields
     public string $store_name = '';
+
     public ?string $store_description = null;
+
     public ?string $logo = null;
+
     public ?string $banner = null;
 
     public int $tab = 1;
 
     // Address fields
     public ?string $address = null;
+
     public ?string $province = null;
+
     public ?string $city = null;
+
     public ?string $district = null;
+
     public ?string $postal_code = null;
 
     public function getVendorAddressesProperty(): Collection
     {
         $vendor = Auth::user()?->vendor;
-        if (!$vendor) {
+        if (! $vendor) {
             return collect();
         }
 
@@ -48,8 +59,9 @@ class ProfilePage extends Component
     {
         $user = Auth::user();
 
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             $this->redirectRoute('user.login');
+
             return;
         }
 
@@ -85,8 +97,9 @@ class ProfilePage extends Component
         $validated = $this->validate();
 
         $user = Auth::user();
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             $this->redirectRoute('user.login');
+
             return;
         }
 
@@ -135,11 +148,18 @@ class ProfilePage extends Component
     public function onLogoUploaded(string $path): void
     {
         $vendor = Auth::user()?->vendor;
-        if (!$vendor) {
+        if (! $vendor) {
             return;
         }
 
+        abort_unless(dirname($path) === 'vendors/'.$vendor->id.'/logos', 403);
+
+        $oldLogo = $vendor->logo;
         $vendor->update(['logo' => $path]);
+
+        if ($oldLogo && $oldLogo !== $path) {
+            Storage::disk('public')->delete($oldLogo);
+        }
         $this->logo = $path;
         session()->flash('success', 'Logo toko berhasil diperbarui.');
     }
@@ -156,7 +176,7 @@ class ProfilePage extends Component
         ]);
 
         $vendor = Auth::user()?->vendor;
-        if (!$vendor) {
+        if (! $vendor) {
             return;
         }
 
@@ -176,7 +196,7 @@ class ProfilePage extends Component
     public function deleteAddress(int $addressId): void
     {
         $vendor = Auth::user()?->vendor;
-        if (!$vendor) {
+        if (! $vendor) {
             return;
         }
 

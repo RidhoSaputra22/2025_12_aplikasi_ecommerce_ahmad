@@ -2,14 +2,16 @@
 
 namespace App\Livewire\User\Home;
 
+use App\Enums\ProductStatus;
+use App\Enums\VendorStatus;
 use App\Models\Category;
 use App\Models\Product;
 use Livewire\Component;
 
 class Welcome extends Component
 {
-
     public int $selectedCategoryId = 1;
+
     public bool $readyToLoad = false;
 
     public function loadInitialData(): void
@@ -36,8 +38,6 @@ class Welcome extends Component
         }
     }
 
-
-
     public function render()
     {
         if (! $this->readyToLoad) {
@@ -50,15 +50,34 @@ class Welcome extends Component
                 ->section('content');
         }
 
-        $categories = Category::query()->withCount('products')->take(5)->get();
+        $activeProducts = fn ($query) => $query
+            ->where('status', ProductStatus::Active)
+            ->whereHas('vendor', fn ($vendorQuery) => $vendorQuery->where('status', VendorStatus::Active))
+            ->whereHas('productVariants');
+
+        $categories = Category::query()
+            ->withCount(['products' => $activeProducts])
+            ->take(5)
+            ->get();
 
         $products = $this->selectedCategoryId > 0
-            ? Product::query()->where('category_id', $this->selectedCategoryId)->latest()->take(5)->get()
+            ? Product::query()
+                ->with(['category', 'vendor'])
+                ->where('category_id', $this->selectedCategoryId)
+                ->where($activeProducts)
+                ->latest()
+                ->take(5)
+                ->get()
             : collect();
 
-        $produkUnggulan = Product::where('price', '>=', 400000)->latest()->take(5)->get();
+        $produkUnggulan = Product::query()
+            ->with(['category', 'vendor'])
+            ->where('price', '>=', 400000)
+            ->where($activeProducts)
+            ->latest()
+            ->take(5)
+            ->get();
         $selectedCategoryName = Category::where('id', $this->selectedCategoryId)->value('name') ?? '';
-
 
         return view('user.home.welcome', compact('categories', 'products', 'produkUnggulan', 'selectedCategoryName'))->extends('layouts.app')->section('content');
     }

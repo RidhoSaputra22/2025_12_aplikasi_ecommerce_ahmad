@@ -5,30 +5,39 @@ namespace App\Livewire\User\Dashboard;
 use App\Models\ShipmentAddress;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ProfilePage extends Component
 {
     public string $name = '';
+
     public string $email = '';
+
     public ?string $phone = null;
+
     public ?string $foto = null;
-    public ?string $description = "Has";
+
+    public ?string $description = 'Has';
 
     public int $tab = 1;
 
     // Address fields
     public string $addrProvince = '';
-    public string $addrCity = '';
-    public string $addrDistrict = '';
-    public string $addrPostalCode = '';
-    public string $addrAddress = '';
 
+    public string $addrCity = '';
+
+    public string $addrDistrict = '';
+
+    public string $addrPostalCode = '';
+
+    public string $addrAddress = '';
 
     public function getShipmentAddressProperty(): ?ShipmentAddress
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return null;
         }
 
@@ -41,8 +50,9 @@ class ProfilePage extends Component
     {
         $user = Auth::user();
 
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             $this->redirectRoute('user.login');
+
             return;
         }
 
@@ -55,11 +65,11 @@ class ProfilePage extends Component
         // Load single address
         $address = ShipmentAddress::query()->where('user_id', $user->id)->first();
         if ($address) {
-            $this->addrProvince   = (string) ($address->province ?? '');
-            $this->addrCity       = (string) ($address->city ?? '');
-            $this->addrDistrict   = (string) ($address->district ?? '');
+            $this->addrProvince = (string) ($address->province ?? '');
+            $this->addrCity = (string) ($address->city ?? '');
+            $this->addrDistrict = (string) ($address->district ?? '');
             $this->addrPostalCode = (string) ($address->postal_code ?? '');
-            $this->addrAddress    = (string) ($address->address ?? '');
+            $this->addrAddress = (string) ($address->address ?? '');
         }
     }
 
@@ -80,8 +90,9 @@ class ProfilePage extends Component
         $validated = $this->validate();
 
         $user = Auth::user();
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             $this->redirectRoute('user.login');
+
             return;
         }
 
@@ -131,14 +142,22 @@ class ProfilePage extends Component
     public function onProfilePhotoUploaded(string $path): void
     {
         $user = Auth::user();
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             $this->redirectRoute('user.login');
+
             return;
         }
 
+        abort_unless(dirname($path) === 'users/'.$user->id.'/photos', 403);
+
+        $oldPhoto = $user->foto;
         $user->update([
             'foto' => $path,
         ]);
+
+        if ($oldPhoto && $oldPhoto !== $path) {
+            Storage::disk('public')->delete($oldPhoto);
+        }
 
         $this->foto = $path;
         session()->flash('success', 'Foto profil berhasil diperbarui.');
@@ -152,32 +171,32 @@ class ProfilePage extends Component
     public function saveAddress(): void
     {
         $this->validate([
-            'addrProvince'   => ['required', 'string', 'max:100'],
-            'addrCity'       => ['required', 'string', 'max:100'],
-            'addrDistrict'   => ['required', 'string', 'max:100'],
+            'addrProvince' => ['required', 'string', 'max:100'],
+            'addrCity' => ['required', 'string', 'max:100'],
+            'addrDistrict' => ['required', 'string', 'max:100'],
             'addrPostalCode' => ['required', 'string', 'max:20'],
-            'addrAddress'    => ['required', 'string', 'max:500'],
+            'addrAddress' => ['required', 'string', 'max:500'],
         ], [
-            'addrProvince.required'   => 'Provinsi wajib diisi.',
-            'addrCity.required'       => 'Kota wajib diisi.',
-            'addrDistrict.required'   => 'Kecamatan wajib diisi.',
+            'addrProvince.required' => 'Provinsi wajib diisi.',
+            'addrCity.required' => 'Kota wajib diisi.',
+            'addrDistrict.required' => 'Kecamatan wajib diisi.',
             'addrPostalCode.required' => 'Kode pos wajib diisi.',
-            'addrAddress.required'    => 'Alamat lengkap wajib diisi.',
+            'addrAddress.required' => 'Alamat lengkap wajib diisi.',
         ]);
 
         $user = Auth::user();
-        if (!$user instanceof User) {
+        if (! $user instanceof User) {
             return;
         }
 
         ShipmentAddress::query()->updateOrCreate(
             ['user_id' => $user->id],
             [
-                'province'    => $this->addrProvince,
-                'city'        => $this->addrCity,
-                'district'    => $this->addrDistrict,
+                'province' => $this->addrProvince,
+                'city' => $this->addrCity,
+                'district' => $this->addrDistrict,
                 'postal_code' => $this->addrPostalCode,
-                'address'     => $this->addrAddress,
+                'address' => $this->addrAddress,
             ]
         );
 

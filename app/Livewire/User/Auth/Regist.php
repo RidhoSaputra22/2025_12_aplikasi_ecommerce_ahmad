@@ -5,6 +5,8 @@ namespace App\Livewire\User\Auth;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserRole;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -33,32 +35,32 @@ class Regist extends Component
         // Validasi input
         $this->validate();
 
-        // Logika pendaftaran pengguna baru
-        $user = User::create([
-            'name' => $this->nama,
-            'email' => $this->email,
-            'phone' => $this->phone ?: null,
-            'password' => bcrypt($this->password),
-        ]);
+        $userRole = Role::query()->where('name', $this->role)->first();
+        if (! $userRole) {
+            throw ValidationException::withMessages([
+                'role' => 'Peran akun tidak tersedia. Hubungi administrator.',
+            ]);
+        }
 
-        $userRole = Role::where('name', $this->role)->first();
+        DB::transaction(function () use ($userRole): void {
+            $user = User::query()->create([
+                'name' => $this->nama,
+                'email' => $this->email,
+                'phone' => $this->phone ?: null,
+                'password' => bcrypt($this->password),
+            ]);
 
-        if ($userRole) {
             UserRole::create([
                 'user_id' => $user->id,
                 'role_id' => $userRole->id,
             ]);
-        }
 
-        // make vendor profile if role is vendor
-        if ($this->role === 'vendor') {
-            $user->vendor()->create([
-                'name' => $this->nama,
-                'email' => $this->email,
-                'phone' => $this->phone ?: null,
-
-            ]);
-        }
+            if ($this->role === 'vendor') {
+                $user->vendor()->create([
+                    'store_name' => $this->nama,
+                ]);
+            }
+        });
 
         $roleLabel = $this->role === 'vendor' ? 'Vendor' : 'Customer';
         session()->flash('message', 'Pendaftaran berhasil sebagai '.$roleLabel.'! Silakan login.');

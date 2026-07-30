@@ -10,14 +10,14 @@ use App\Models\VendorWallet;
 use App\Services\AdminFeeService;
 use App\Services\Payment\PaymentService;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class OrdersTable
@@ -25,7 +25,9 @@ class OrdersTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['orderVendors.vendor.vendorBankAccounts']))
+            ->modifyQueryUsing(fn ($query) => $query
+                ->with(['orderVendors.vendor.vendorBankAccounts'])
+                ->withCount('orderVendors'))
             ->columns([
                 TextColumn::make('user.name')
                     ->label('Customer')
@@ -112,32 +114,59 @@ class OrdersTable
                     ->modalHeading('Konfirmasi Pembayaran')
                     ->modalDescription(fn ($record) => 'Apakah Anda yakin ingin mengkonfirmasi pembayaran untuk pesanan '.$record->order_number.'?')
                     ->action(function ($record) {
-                        $payment = $record->payment;
-                        if ($payment) {
+                        $record = DB::transaction(function () use ($record) {
+                            $lockedOrder = $record->newQuery()
+                                ->whereKey($record->id)
+                                ->where('payment_status', OrderPaymentStatus::WaitingConfirmation)
+                                ->lockForUpdate()
+                                ->first();
+
+                            if (! $lockedOrder) {
+                                return null;
+                            }
+
+                            $payment = $lockedOrder->payment()->lockForUpdate()->first();
+                            if (! $payment || $payment->status !== PaymentStatus::WaitingConfirmation) {
+                                return null;
+                            }
+
                             $payment->update([
                                 'status' => PaymentStatus::Success,
                                 'confirmed_at' => now(),
                                 'confirmed_by' => Auth::id(),
                                 'paid_at' => now(),
                             ]);
+
+                            $lockedOrder->update([
+                                'status' => OrderStatus::Paid,
+                                'payment_status' => OrderPaymentStatus::Paid,
+                            ]);
+
+                            return $lockedOrder->fresh('user');
+                        });
+
+                        if (! $record?->user) {
+                            return;
                         }
 
-                        $record->update([
-                            'status' => OrderStatus::Paid,
-                            'payment_status' => OrderPaymentStatus::Paid,
-                        ]);
-
                         // Notify customer
-                        $record->user->notifications()->create([
-                            'id' => Str::uuid(),
-                            'type' => 'App\\Notifications\\PaymentConfirmed',
-                            'data' => json_encode([
-                                'title' => 'Pembayaran Dikonfirmasi',
-                                'message' => 'Pembayaran untuk pesanan #'.$record->order_number.' telah dikonfirmasi oleh admin.',
+                        try {
+                            $record->user->notifications()->create([
+                                'id' => Str::uuid(),
+                                'type' => 'App\\Notifications\\PaymentConfirmed',
+                                'data' => json_encode([
+                                    'title' => 'Pembayaran Dikonfirmasi',
+                                    'message' => 'Pembayaran untuk pesanan #'.$record->order_number.' telah dikonfirmasi oleh admin.',
+                                    'order_id' => $record->id,
+                                    'order_number' => $record->order_number,
+                                ]),
+                            ]);
+                        } catch (\Throwable $e) {
+                            Log::warning('Gagal mengirim notifikasi konfirmasi pembayaran.', [
                                 'order_id' => $record->id,
-                                'order_number' => $record->order_number,
-                            ]),
-                        ]);
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
                     }),
                 Action::make('reject_payment')
                     ->label('Tolak Bayar')
@@ -148,28 +177,55 @@ class OrdersTable
                     ->modalHeading('Tolak Pembayaran')
                     ->modalDescription(fn ($record) => 'Apakah Anda yakin ingin menolak pembayaran untuk pesanan '.$record->order_number.'? Customer harus upload ulang bukti pembayaran.')
                     ->action(function ($record) {
-                        $payment = $record->payment;
-                        if ($payment) {
+                        $record = DB::transaction(function () use ($record) {
+                            $lockedOrder = $record->newQuery()
+                                ->whereKey($record->id)
+                                ->where('payment_status', OrderPaymentStatus::WaitingConfirmation)
+                                ->lockForUpdate()
+                                ->first();
+
+                            if (! $lockedOrder) {
+                                return null;
+                            }
+
+                            $payment = $lockedOrder->payment()->lockForUpdate()->first();
+                            if (! $payment || $payment->status !== PaymentStatus::WaitingConfirmation) {
+                                return null;
+                            }
+
                             $payment->update([
                                 'status' => PaymentStatus::Failed,
                             ]);
+
+                            $lockedOrder->update([
+                                'payment_status' => OrderPaymentStatus::Failed,
+                            ]);
+
+                            return $lockedOrder->fresh('user');
+                        });
+
+                        if (! $record?->user) {
+                            return;
                         }
 
-                        $record->update([
-                            'payment_status' => OrderPaymentStatus::Failed,
-                        ]);
-
                         // Notify customer
-                        $record->user->notifications()->create([
-                            'id' => Str::uuid(),
-                            'type' => 'App\\Notifications\\PaymentRejected',
-                            'data' => json_encode([
-                                'title' => 'Pembayaran Ditolak',
-                                'message' => 'Pembayaran untuk pesanan #'.$record->order_number.' ditolak. Silakan upload ulang bukti pembayaran yang valid.',
+                        try {
+                            $record->user->notifications()->create([
+                                'id' => Str::uuid(),
+                                'type' => 'App\\Notifications\\PaymentRejected',
+                                'data' => json_encode([
+                                    'title' => 'Pembayaran Ditolak',
+                                    'message' => 'Pembayaran untuk pesanan #'.$record->order_number.' ditolak. Silakan upload ulang bukti pembayaran yang valid.',
+                                    'order_id' => $record->id,
+                                    'order_number' => $record->order_number,
+                                ]),
+                            ]);
+                        } catch (\Throwable $e) {
+                            Log::warning('Gagal mengirim notifikasi penolakan pembayaran.', [
                                 'order_id' => $record->id,
-                                'order_number' => $record->order_number,
-                            ]),
-                        ]);
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
                     }),
                 Action::make('disburse_to_vendors')
                     ->label('Cairkan ke Vendor')
@@ -214,7 +270,10 @@ class OrdersTable
                     ->action(function ($record) {
                         DB::transaction(function () use ($record) {
                             $adminFeeService = app(AdminFeeService::class);
-                            $undisbursedVendors = $record->orderVendors()->where('is_disbursed', false)->get();
+                            $undisbursedVendors = $record->orderVendors()
+                                ->where('is_disbursed', false)
+                                ->lockForUpdate()
+                                ->get();
 
                             foreach ($undisbursedVendors as $orderVendor) {
                                 $breakdown = $adminFeeService->resolveBreakdown($orderVendor);
@@ -229,10 +288,17 @@ class OrdersTable
                                 }
 
                                 // Get or create vendor wallet
-                                $wallet = VendorWallet::firstOrCreate(
-                                    ['vendor_id' => $orderVendor->vendor_id],
-                                    ['balance' => 0]
-                                );
+                                $wallet = VendorWallet::query()
+                                    ->where('vendor_id', $orderVendor->vendor_id)
+                                    ->lockForUpdate()
+                                    ->first();
+
+                                if (! $wallet) {
+                                    $wallet = VendorWallet::query()->create([
+                                        'vendor_id' => $orderVendor->vendor_id,
+                                        'balance' => 0,
+                                    ]);
+                                }
 
                                 // Add credit transaction
                                 $wallet->transactions()->create([
@@ -260,22 +326,29 @@ class OrdersTable
                                 // Notify vendor
                                 $vendorUser = $orderVendor->vendor?->user;
                                 if ($vendorUser) {
-                                    $vendorUser->notifications()->create([
-                                        'id' => Str::uuid(),
-                                        'type' => 'App\\Notifications\\VendorDisbursement',
-                                        'data' => json_encode([
-                                            'title' => 'Dana Dicairkan',
-                                            'message' => 'Dana bersih sebesar Rp '.number_format((float) $breakdown['vendor_payout_amount'], 0, ',', '.')
-                                                .' dari pesanan #'.$record->order_number.' telah dicairkan ke wallet Anda setelah potongan admin Rp '
-                                                .number_format((float) $breakdown['admin_fee_amount'], 0, ',', '.').'.',
-                                            'order_id' => $record->id,
-                                            'order_number' => $record->order_number,
-                                            'amount' => $breakdown['vendor_payout_amount'],
-                                            'gross_amount' => $breakdown['gross_amount'],
-                                            'admin_fee_amount' => $breakdown['admin_fee_amount'],
-                                            'admin_fee_percentage' => $breakdown['admin_fee_percentage'],
-                                        ]),
-                                    ]);
+                                    try {
+                                        $vendorUser->notifications()->create([
+                                            'id' => Str::uuid(),
+                                            'type' => 'App\\Notifications\\VendorDisbursement',
+                                            'data' => json_encode([
+                                                'title' => 'Dana Dicairkan',
+                                                'message' => 'Dana bersih sebesar Rp '.number_format((float) $breakdown['vendor_payout_amount'], 0, ',', '.')
+                                                    .' dari pesanan #'.$record->order_number.' telah dicairkan ke wallet Anda setelah potongan admin Rp '
+                                                    .number_format((float) $breakdown['admin_fee_amount'], 0, ',', '.').'.',
+                                                'order_id' => $record->id,
+                                                'order_number' => $record->order_number,
+                                                'amount' => $breakdown['vendor_payout_amount'],
+                                                'gross_amount' => $breakdown['gross_amount'],
+                                                'admin_fee_amount' => $breakdown['admin_fee_amount'],
+                                                'admin_fee_percentage' => $breakdown['admin_fee_percentage'],
+                                            ]),
+                                        ]);
+                                    } catch (\Throwable $e) {
+                                        Log::warning('Gagal mengirim notifikasi pencairan vendor.', [
+                                            'order_vendor_id' => $orderVendor->id,
+                                            'error' => $e->getMessage(),
+                                        ]);
+                                    }
                                 }
                             }
                         });
@@ -294,23 +367,22 @@ class OrdersTable
                         try {
                             $paymentService = app(PaymentService::class);
                             $paymentService->syncPaymentStatus($record);
-                            \Filament\Notifications\Notification::make()
+                            Notification::make()
                                 ->title('Status Midtrans berhasil disinkronkan.')
                                 ->success()
                                 ->send();
                         } catch (\Exception $e) {
-                            \Filament\Notifications\Notification::make()
+                            Notification::make()
                                 ->title('Gagal sinkronkan: '.$e->getMessage())
                                 ->danger()
                                 ->send();
                         }
                     }),
-                EditAction::make(),
+                EditAction::make()
+                    ->visible(fn ($record) => $record->status === OrderStatus::Pending
+                        && $record->payment_status === OrderPaymentStatus::Pending
+                        && (int) $record->order_vendors_count === 1),
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->toolbarActions([]);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Livewire\User\Products;
 
+use App\Enums\ProductStatus;
+use App\Enums\VendorStatus;
 use App\Models\Category;
 use App\Models\Product;
 use Livewire\Component;
@@ -48,8 +50,10 @@ class Cari extends Component
     public function getProducts()
     {
         $query = Product::query()
-            ->with('category') // eager load (recommended)
-            ->with('productVariants'); // eager load (recommended)
+            ->with(['category', 'productVariants', 'productImages', 'vendor'])
+            ->where('status', ProductStatus::Active)
+            ->whereHas('vendor', fn ($vendorQuery) => $vendorQuery->where('status', VendorStatus::Active))
+            ->whereHas('productVariants');
 
         // Filter kategori
         if ($this->selectedCategorySlug) {

@@ -36,7 +36,8 @@ class User extends Authenticatable implements FilamentUser
         // Hanya admin yang boleh mengakses Filament admin panel
         // (Panel vendor tidak menggunakan Filament — berbasis Livewire di /vendor/dashboard)
         if ($panel->getId() === 'admin') {
-            return $this->role && in_array($this->role->name, ['admin']);
+            return $this->status === UserStatus::Active
+                && $this->role?->name === 'admin';
         }
 
         return false;

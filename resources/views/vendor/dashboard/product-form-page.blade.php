@@ -123,6 +123,7 @@
 
             @if (empty($variants))
                 <p class="text-sm text-gray-500">Belum ada varian. Klik "Tambah Varian" untuk menambahkan.</p>
+                @error('variants') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
             @else
                 <div class="space-y-3">
                     @foreach ($variants as $index => $variant)
@@ -141,6 +142,7 @@
                                         <input type="text" wire:model="variants.{{ $index }}.sku"
                                             class="w-full border border-gray-300 rounded-sm px-2 py-1.5 text-sm"
                                             placeholder="SKU-001">
+                                        @error("variants.{$index}.sku") <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-600 mb-1">Harga (Rp) *</label>

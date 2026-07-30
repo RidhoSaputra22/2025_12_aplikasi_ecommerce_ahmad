@@ -2,6 +2,8 @@
 
 namespace App\Livewire\User\Products;
 
+use App\Enums\ProductStatus;
+use App\Enums\VendorStatus;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
@@ -69,7 +71,7 @@ class Detail extends Component
             return;
         }
 
-        $product = Product::query()->where('slug', $this->slug)->firstOrFail();
+        $product = $this->activeProductQuery()->where('slug', $this->slug)->firstOrFail();
 
         $variantId = $this->selectedVariantId
             ?? $product->productVariants()->orderBy('id')->value('id');
@@ -136,7 +138,19 @@ class Detail extends Component
 
     public function render()
     {
-        $product = Product::with(['productImages', 'productVariants', 'reviews.user', 'category'])->where('slug', $this->slug)->firstOrFail();
+        $product = $this->activeProductQuery()
+            ->with([
+                'productImages',
+                'productVariants',
+                'reviews.user',
+                'category',
+                'vendor.user',
+                'vendor.products' => fn ($query) => $query
+                    ->where('status', ProductStatus::Active)
+                    ->with(['productImages', 'vendor']),
+            ])
+            ->where('slug', $this->slug)
+            ->firstOrFail();
         $productImages = $product->productImages;
         $productVariants = $product->productVariants;
         $reviews = $product->reviews()->with('user')->get();
@@ -154,5 +168,12 @@ class Detail extends Component
 
         return view('user.products.detail', compact('product', 'productImages', 'reviews', 'productVariants', 'selectedVariant'))
             ->extends('layouts.app');
+    }
+
+    private function activeProductQuery()
+    {
+        return Product::query()
+            ->where('status', ProductStatus::Active)
+            ->whereHas('vendor', fn ($query) => $query->where('status', VendorStatus::Active));
     }
 }

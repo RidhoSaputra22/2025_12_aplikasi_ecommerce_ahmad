@@ -8,10 +8,15 @@ use Carbon\Carbon;
 class ShipmentTrackingService
 {
     protected float $originLat;
+
     protected float $originLng;
+
     protected float $destLat;
+
     protected float $destLng;
+
     protected int $travelDurationSeconds;
+
     protected float $speedMultiplier;
 
     public function __construct()
@@ -20,8 +25,11 @@ class ShipmentTrackingService
         $this->originLng = (float) config('shipping.origin.lng');
         $this->destLat = (float) config('shipping.destination.lat');
         $this->destLng = (float) config('shipping.destination.lng');
-        $this->travelDurationSeconds = (int) (config('shipping.travel_duration_hours', 6) * 3600);
-        $this->speedMultiplier = (float) config('shipping.speed_multiplier', 1);
+        $this->travelDurationSeconds = max(
+            (int) (config('shipping.travel_duration_hours', 6) * 3600),
+            1,
+        );
+        $this->speedMultiplier = max((float) config('shipping.speed_multiplier', 1), 0.000001);
     }
 
     /**
@@ -31,7 +39,7 @@ class ShipmentTrackingService
      */
     public function calculateShipPosition(Shipment $shipment): array
     {
-        if (!$shipment->shipped_at) {
+        if (! $shipment->shipped_at) {
             return $this->buildResponse(
                 $this->originLat,
                 $this->originLng,
@@ -68,7 +76,7 @@ class ShipmentTrackingService
         // ETA calculation
         $eta = null;
         if ($progress < 1.0) {
-            $remainingSeconds = $this->travelDurationSeconds - $elapsed;
+            $remainingSeconds = ($this->travelDurationSeconds - $elapsed) / $this->speedMultiplier;
             $eta = now()->addSeconds((int) $remainingSeconds)->toIso8601String();
         }
 

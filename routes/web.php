@@ -13,6 +13,8 @@ use App\Livewire\User\Payment\PaymentPage;
 use App\Livewire\User\Products\Cari;
 use App\Livewire\User\Products\Detail;
 use App\Livewire\Vendor\Dashboard\Dashboard as VendorDashboard;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', Welcome::class)->name('welcome');
@@ -39,13 +41,15 @@ Route::middleware(['auth', 'check.vendor.role'])->group(function () {
 // Midtrans Webhook (tanpa auth, tanpa CSRF)
 Route::post('/api/midtrans/notification', [MidtransWebhookController::class, 'notification'])
     ->name('midtrans.notification')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+    ->withoutMiddleware([VerifyCsrfToken::class]);
 
 Route::get('/user/login', Login::class)->name('user.login');
 Route::get('/login', Login::class)->name('login');
-Route::get('/user/logout', function () {
+Route::post('/user/logout', function (Request $request) {
     auth()->logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
 
     return redirect()->route('welcome');
-})->name('user.logout');
+})->middleware('auth')->name('user.logout');
 Route::get('/user/register', Regist::class)->name('user.register');

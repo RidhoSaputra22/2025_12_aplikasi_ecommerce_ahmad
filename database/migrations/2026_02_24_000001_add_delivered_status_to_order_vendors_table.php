@@ -19,8 +19,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Alter ENUM column untuk menambahkan value 'delivered'
-        DB::statement("ALTER TABLE order_vendors MODIFY COLUMN status ENUM('pending','processed','shipped','delivered','completed') NOT NULL DEFAULT 'pending'");
+        if (in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
+            DB::statement("ALTER TABLE order_vendors MODIFY COLUMN status ENUM('pending','processed','shipped','delivered','completed') NOT NULL DEFAULT 'pending'");
+        }
 
         Schema::table('order_vendors', function (Blueprint $table) {
             $table->timestamp('vendor_confirmed_at')->nullable()->after('status')
@@ -39,6 +40,8 @@ return new class extends Migration
             $table->dropColumn(['vendor_confirmed_at', 'customer_confirmed_at']);
         });
 
-        DB::statement("ALTER TABLE order_vendors MODIFY COLUMN status ENUM('pending','processed','shipped','completed') NOT NULL DEFAULT 'pending'");
+        if (in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
+            DB::statement("ALTER TABLE order_vendors MODIFY COLUMN status ENUM('pending','processed','shipped','completed') NOT NULL DEFAULT 'pending'");
+        }
     }
 };

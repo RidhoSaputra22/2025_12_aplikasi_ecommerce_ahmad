@@ -2,6 +2,8 @@
 
 namespace App\Livewire\User\Cart;
 
+use App\Enums\ProductStatus;
+use App\Enums\VendorStatus;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
@@ -17,6 +19,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
@@ -184,8 +187,15 @@ class CartSummary extends Component
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255'],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore(Auth::id()),
+            ],
             'phone' => ['required', 'string', 'max:50'],
+            'selectedCouriers' => ['required', 'array'],
+            'selectedCouriers.*' => ['required', 'integer', 'exists:shipment_couriers,id'],
         ]);
 
         // Auto-use the user's single shipment address
@@ -220,15 +230,31 @@ class CartSummary extends Component
             }
         }
 
-        // Pre-load semua courier yang dipilih
+        // Kurir akan dibaca ulang dan dikunci di dalam transaksi.
         $courierIds = array_filter(array_values($this->selectedCouriers));
-        $couriersMap = ShipmentCourier::query()->whereIn('id', $courierIds)->get()->keyBy('id');
 
-        DB::transaction(function () use ($validated, $couriersMap) {
+        DB::transaction(function () use ($validated, $courierIds) {
             /** @var User $user */
             $user = Auth::user();
 
             $user->forceFill(Arr::only($validated, ['name', 'email', 'phone']))->save();
+
+            $shipmentAddress = ShipmentAddress::query()
+                ->whereKey($this->shipmentAddressId)
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->first();
+            if (! $shipmentAddress) {
+                throw ValidationException::withMessages([
+                    'cart' => 'Alamat pengiriman sudah tidak tersedia.',
+                ]);
+            }
+
+            $couriersMap = ShipmentCourier::query()
+                ->whereIn('id', $courierIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
 
             $cartId = Cart::query()
                 ->where('user_id', $user->id)
@@ -269,9 +295,13 @@ class CartSummary extends Component
             foreach ($vendorsGrouped as $vendorId => $items) {
                 $courierId = $this->selectedCouriers[$vendorId] ?? null;
                 $courier = $courierId ? $couriersMap->get($courierId) : null;
-                if ($courier) {
-                    $totalShippingCost += (float) $courier->price;
+                if (! $courier) {
+                    throw ValidationException::withMessages([
+                        'selectedCouriers' => 'Kurir yang dipilih sudah tidak tersedia.',
+                    ]);
                 }
+
+                $totalShippingCost += (float) $courier->price;
             }
 
             $totalAmount = $productSubtotal + $totalShippingCost;
@@ -318,7 +348,15 @@ class CartSummary extends Component
                         ]);
                     }
 
-                    $variantFresh = $variant->newQuery()->whereKey($variant->id)->lockForUpdate()->first();
+                    $variantFresh = $variant->newQuery()
+                        ->whereKey($variant->id)
+                        ->whereHas('product', function ($query) {
+                            $query
+                                ->where('status', ProductStatus::Active)
+                                ->whereHas('vendor', fn ($vendorQuery) => $vendorQuery->where('status', VendorStatus::Active));
+                        })
+                        ->lockForUpdate()
+                        ->first();
                     if (! $variantFresh) {
                         throw ValidationException::withMessages([
                             'cart' => 'Variant produk tidak tersedia.',
@@ -348,11 +386,17 @@ class CartSummary extends Component
                 // Simpan shipment dengan kurir yang dipilih
                 $courierId = $this->selectedCouriers[$vendorId] ?? null;
                 $courier = $courierId ? $couriersMap->get($courierId) : null;
-                $shippingCost = $courier ? (float) $courier->price : 0;
+                if (! $courier) {
+                    throw ValidationException::withMessages([
+                        'selectedCouriers' => 'Kurir yang dipilih sudah tidak tersedia.',
+                    ]);
+                }
+
+                $shippingCost = (float) $courier->price;
 
                 Shipment::query()->create([
                     'order_vendor_id' => $orderVendor->id,
-                    'shipment_address_id' => $this->shipmentAddressId,
+                    'shipment_address_id' => $shipmentAddress->id,
                     'shipment_courier_id' => $courierId,
                     'tracking_number' => null,
                     'shipping_cost' => $shippingCost,

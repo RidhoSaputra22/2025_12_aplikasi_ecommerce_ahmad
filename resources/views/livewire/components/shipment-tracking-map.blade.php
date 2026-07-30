@@ -228,7 +228,7 @@
 
             // On WebSocket event: re-anchor shippedAt from server truth
             if (window.Echo) {
-                window.Echo.channel('shipment.' + cfg.shipmentId)
+                window.Echo.private('shipment.' + cfg.shipmentId)
                     .listen('.ShipPositionUpdated', function(data) {
                         // Re-sync: recalculate shippedAt equivalent from server progress
                         if (data.progress < 1.0) {

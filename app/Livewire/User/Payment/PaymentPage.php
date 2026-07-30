@@ -2,6 +2,7 @@
 
 namespace App\Livewire\User\Payment;
 
+use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Services\Payment\PaymentService;
@@ -23,16 +24,22 @@ use Livewire\Component;
 class PaymentPage extends Component
 {
     public ?int $orderId = null;
+
     public string $paymentMethod = 'midtrans'; // Default ke midtrans
+
     public ?string $snapToken = null;
+
     public ?string $snapRedirectUrl = null;
+
     public bool $isProcessing = false;
+
     public ?string $errorMessage = null;
 
     public function mount(int $orderId): void
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             $this->redirectRoute('user.login');
+
             return;
         }
 
@@ -40,9 +47,10 @@ class PaymentPage extends Component
 
         $order = $this->getOrder();
 
-        if (!$order) {
+        if (! $order) {
             session()->flash('error', 'Pesanan tidak ditemukan.');
             $this->redirectRoute('user.dashboard', ['tab' => 'history']);
+
             return;
         }
 
@@ -55,7 +63,7 @@ class PaymentPage extends Component
 
     public function getOrder(): ?Order
     {
-        if (!$this->orderId || !Auth::check()) {
+        if (! $this->orderId || ! Auth::check()) {
             return null;
         }
 
@@ -82,24 +90,34 @@ class PaymentPage extends Component
         try {
             $order = $this->getOrder();
 
-            if (!$order) {
+            if (! $order) {
                 $this->errorMessage = 'Pesanan tidak ditemukan.';
                 $this->isProcessing = false;
+
                 return;
             }
 
             $payment = $order->payment;
 
-            if (!$payment) {
+            if (! $payment) {
                 $this->errorMessage = 'Data pembayaran tidak ditemukan.';
                 $this->isProcessing = false;
+
+                return;
+            }
+
+            if ($order->status === OrderStatus::Cancelled) {
+                $this->errorMessage = 'Pesanan sudah dibatalkan dan tidak dapat dibayar kembali.';
+                $this->isProcessing = false;
+
                 return;
             }
 
             // Hanya boleh bayar jika status pending atau failed
-            if (!in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Failed])) {
+            if (! in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Failed])) {
                 $this->errorMessage = 'Status pembayaran tidak valid untuk melakukan pembayaran.';
                 $this->isProcessing = false;
+
                 return;
             }
 
@@ -109,6 +127,7 @@ class PaymentPage extends Component
                 $this->snapRedirectUrl = $payment->snap_redirect_url;
                 $this->isProcessing = false;
                 $this->dispatch('open-snap', token: $this->snapToken);
+
                 return;
             }
 
@@ -143,7 +162,7 @@ class PaymentPage extends Component
         try {
             $order = $this->getOrder();
 
-            if (!$order || !$order->payment || !$order->payment->snap_token) {
+            if (! $order || ! $order->payment || ! $order->payment->snap_token) {
                 return;
             }
 

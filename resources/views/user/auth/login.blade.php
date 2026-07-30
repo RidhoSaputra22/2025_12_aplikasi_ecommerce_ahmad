@@ -61,9 +61,9 @@
     </div>
     <div class="flex-3 bg-primary py-12 px-24 text-white space-y-4 ">
         <div class="space-y-3">
-            <h1 class="text-6xl/snug font-semibold">Bersama Membantu Membangun Desa</h1>
+            <h1 class="text-6xl/snug font-semibold">Selamat Datang di Toko Gade</h1>
             <p class="text-lg font-light">
-                Toko Ga`de hadir untuk mendukung perekonomian desa dengan menyediakan platform e-commerce yang
+                Toko Ga`de adalah platform e-commerce yang
                 memudahkan
                 masyarakat desa dalam mengakses produk berkualitas dari berbagai daerah. Mari bergabung bersama kami
                 dalam

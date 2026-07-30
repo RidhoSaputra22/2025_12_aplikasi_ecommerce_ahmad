@@ -3,10 +3,7 @@
 namespace App\Livewire\Vendor\Dashboard;
 
 use App\Enums\ProductStatus;
-use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductImage;
-use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
@@ -17,6 +14,7 @@ class ProductPage extends Component
     use WithPagination;
 
     public ?string $selectedStatus = null;
+
     public ?string $search = null;
 
     public function updatingSearch(): void
@@ -42,13 +40,21 @@ class ProductPage extends Component
     public function deleteProduct(int $productId): void
     {
         $vendor = Auth::user()?->vendor;
-        if (!$vendor) {
+        if (! $vendor) {
             return;
         }
 
         $product = Product::where('id', $productId)->where('vendor_id', $vendor->id)->first();
-        if (!$product) {
+        if (! $product) {
             session()->flash('error', 'Produk tidak ditemukan.');
+
+            return;
+        }
+
+        if ($product->productVariants()->whereHas('orderItems')->exists()) {
+            $product->update(['status' => ProductStatus::Archived]);
+            session()->flash('error', 'Produk memiliki riwayat pesanan sehingga diarsipkan dan tidak dihapus.');
+
             return;
         }
 
@@ -67,12 +73,12 @@ class ProductPage extends Component
     public function toggleStatus(int $productId): void
     {
         $vendor = Auth::user()?->vendor;
-        if (!$vendor) {
+        if (! $vendor) {
             return;
         }
 
         $product = Product::where('id', $productId)->where('vendor_id', $vendor->id)->first();
-        if (!$product) {
+        if (! $product) {
             return;
         }
 
@@ -86,7 +92,7 @@ class ProductPage extends Component
     {
         $vendor = Auth::user()?->vendor;
 
-        if (!$vendor) {
+        if (! $vendor) {
             return view('vendor.dashboard.product-page', [
                 'products' => collect(),
                 'statusOptions' => [],
@@ -99,12 +105,12 @@ class ProductPage extends Component
                 $query->where('status', $this->selectedStatus);
             })
             ->when($this->search, function ($query) {
-                $query->where('name', 'like', '%' . $this->search . '%');
+                $query->where('name', 'like', '%'.$this->search.'%');
             })
             ->latest('created_at')
             ->paginate(10);
 
-        $statusOptions = array_map(fn($case) => [
+        $statusOptions = array_map(fn ($case) => [
             'value' => $case->value,
             'label' => $case->getLabel(),
         ], ProductStatus::cases());

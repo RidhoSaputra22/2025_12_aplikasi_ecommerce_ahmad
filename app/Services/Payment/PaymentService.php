@@ -49,17 +49,32 @@ class PaymentService
             'orderVendors.shipment.shipmentAddress',
         ]);
 
+        $payment = $order->payment;
+
+        if (! $payment) {
+            throw new \RuntimeException('Data pembayaran tidak ditemukan.');
+        }
+
+        if ($payment->status === PaymentStatus::Success || $order->status === OrderStatus::Cancelled) {
+            throw new \RuntimeException('Status pesanan tidak dapat dibayar.');
+        }
+
         $transactionData = $this->buildSnapTransactionData($order);
         $result = $this->gateway->createTransaction($transactionData);
 
         // Update payment record dengan snap token
-        $order->payment()->update([
+        $payment->update([
             'payment_method' => 'midtrans',
             'payment_gateway' => 'midtrans',
+            'status' => PaymentStatus::Pending,
+            'payment_proof' => null,
+            'confirmed_at' => null,
+            'confirmed_by' => null,
             'snap_token' => $result['token'],
             'snap_redirect_url' => $result['redirect_url'],
-            'expired_at' => now()->addMinutes(1440), // Sesuaikan dengan expiryDuration
+            'expired_at' => now()->addMinutes((int) config('midtrans.payment_expiry_duration', 1440)),
         ]);
+        $order->update(['payment_status' => OrderPaymentStatus::Pending]);
 
         return $result;
     }
@@ -85,18 +100,21 @@ class PaymentService
                     'order_id' => $callbackData->orderId,
                 ]);
 
-                return;
+                throw new \RuntimeException('Payment not found for notification.');
             }
 
-            // Hindari proses ulang jika sudah success
-            if ($payment->status === PaymentStatus::Success) {
-                Log::channel('payment')->info('Payment already settled, skipping', [
+            // Success dan failed bersifat terminal agar callback duplikat atau
+            // out-of-order tidak menggandakan rollback stok.
+            if (in_array($payment->status, [PaymentStatus::Success, PaymentStatus::Failed], true)) {
+                Log::channel('payment')->info('Payment already terminal, skipping', [
                     'order_id' => $callbackData->orderId,
+                    'status' => $payment->status->value,
                 ]);
 
                 return;
             }
 
+            $this->ensureAmountMatches($payment, $callbackData);
             $this->updatePaymentFromCallback($payment, $callbackData);
             $this->updateOrderFromCallback($payment->order, $callbackData);
 
@@ -120,10 +138,11 @@ class PaymentService
             DB::transaction(function () use ($order, $callbackData) {
                 $payment = $order->payment()->lockForUpdate()->first();
 
-                if (! $payment || $payment->status === PaymentStatus::Success) {
+                if (! $payment || in_array($payment->status, [PaymentStatus::Success, PaymentStatus::Failed], true)) {
                     return;
                 }
 
+                $this->ensureAmountMatches($payment, $callbackData);
                 $this->updatePaymentFromCallback($payment, $callbackData);
                 $this->updateOrderFromCallback($order, $callbackData);
             });
@@ -133,6 +152,8 @@ class PaymentService
                 'order_number' => $order->order_number,
                 'error' => $e->getMessage(),
             ]);
+
+            throw $e;
         }
     }
 
@@ -142,18 +163,38 @@ class PaymentService
     public function cancelPayment(Order $order): bool
     {
         try {
+            $payment = $order->payment;
+            if (! $payment || $payment->status === PaymentStatus::Success) {
+                return false;
+            }
+
+            if ($payment->status === PaymentStatus::Failed || $order->status === OrderStatus::Cancelled) {
+                return true;
+            }
+
             $this->gateway->cancelTransaction($order->order_number);
 
-            $order->payment()->update([
-                'status' => PaymentStatus::Failed,
-            ]);
+            return DB::transaction(function () use ($order): bool {
+                $lockedOrder = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+                $lockedPayment = $lockedOrder->payment()->lockForUpdate()->first();
 
-            $order->update([
-                'payment_status' => OrderPaymentStatus::Failed,
-                'status' => OrderStatus::Cancelled,
-            ]);
+                if (! $lockedPayment || $lockedPayment->status === PaymentStatus::Success) {
+                    return false;
+                }
 
-            return true;
+                if ($lockedPayment->status === PaymentStatus::Failed || $lockedOrder->status === OrderStatus::Cancelled) {
+                    return true;
+                }
+
+                $lockedPayment->update(['status' => PaymentStatus::Failed]);
+                $lockedOrder->update([
+                    'payment_status' => OrderPaymentStatus::Failed,
+                    'status' => OrderStatus::Cancelled,
+                ]);
+                $this->rollbackStock($lockedOrder);
+
+                return true;
+            });
 
         } catch (\Exception $e) {
             Log::channel('payment')->error('Failed to cancel payment', [
@@ -312,9 +353,11 @@ class PaymentService
             ]);
 
             // Update semua order vendor ke processed
-            $order->orderVendors()->update([
-                'status' => OrderVendorStatus::Processed,
-            ]);
+            $order->orderVendors()
+                ->where('status', OrderVendorStatus::Pending)
+                ->update([
+                    'status' => OrderVendorStatus::Processed,
+                ]);
 
             // Kirim notifikasi ke vendor
             $this->notifyVendorsOrderPaid($order);
@@ -377,7 +420,10 @@ class PaymentService
                 $variant = $item->productVariant;
 
                 if ($variant) {
-                    $variant->increment('stock', (int) $item->quantity);
+                    $variant->newQuery()
+                        ->whereKey($variant->id)
+                        ->lockForUpdate()
+                        ->increment('stock', (int) $item->quantity);
                 }
             }
         }
@@ -385,5 +431,20 @@ class PaymentService
         Log::channel('payment')->info('Stock rolled back for cancelled order', [
             'order_number' => $order->order_number,
         ]);
+    }
+
+    private function ensureAmountMatches(Payment $payment, MidtransCallbackData $data): void
+    {
+        $expected = (int) round((float) $payment->amount);
+
+        if ($data->grossAmount !== $expected) {
+            Log::channel('payment')->warning('Payment amount mismatch', [
+                'order_id' => $data->orderId,
+                'expected' => $expected,
+                'received' => $data->grossAmount,
+            ]);
+
+            throw new \UnexpectedValueException('Payment amount does not match the order.');
+        }
     }
 }

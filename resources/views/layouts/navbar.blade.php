@@ -117,10 +117,13 @@ return request()->routeIs($patterns);
                         @if (auth()->user()->vendor)
 
                         @endif
-                        <a href="{{ route('user.logout') }}"
-                            class="text-sm font-medium block px-4 py-4 hover:bg-gray-100">
-                            Logout
-                        </a>
+                        <form method="POST" action="{{ route('user.logout') }}">
+                            @csrf
+                            <button type="submit"
+                                class="text-left w-full text-sm font-medium block px-4 py-4 hover:bg-gray-100 cursor-pointer">
+                                Logout
+                            </button>
+                        </form>
                     </div>
                 </div>
 

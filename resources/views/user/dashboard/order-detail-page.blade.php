@@ -335,7 +335,7 @@
                                 <p class="text-sm font-semibold text-teal-800">Vendor Mengkonfirmasi Paket Tiba</p>
                                 <p class="text-sm text-teal-700 mt-1">Apakah Anda sudah menerima pesanan dari <strong>{{ $orderVendor->vendor?->store_name }}</strong>?</p>
                                 @if ($orderVendor->vendor_confirmed_at)
-                                <p class="text-xs text-gray-400 mt-1">Dikonfirmasi tiba oleh vendor: {{ $orderVendor->vendor_confirmed_at->format('d M Y, H:i') }}</p>
+                                <p class="text-xs text-gray-400 mt-1">Dikonfirmasi tiba oleh vendor: {{ $orderVendor->vendor_confirmed_at?->format('d M Y, H:i') ?? '-' }}</p>
                                 @endif
                                 <button type="button"
                                     wire:click="confirmReceived({{ $orderVendor->id }})"
@@ -354,7 +354,7 @@
                         <div>
                             <p class="text-sm text-green-700 font-medium">Pesanan dari {{ $orderVendor->vendor?->store_name }} telah selesai.</p>
                             @if ($orderVendor->customer_confirmed_at)
-                            <p class="text-xs text-gray-400">Dikonfirmasi: {{ $orderVendor->customer_confirmed_at->format('d M Y, H:i') }}</p>
+                            <p class="text-xs text-gray-400">Dikonfirmasi: {{ $orderVendor->customer_confirmed_at?->format('d M Y, H:i') ?? '-' }}</p>
                             @endif
                         </div>
                     </div>

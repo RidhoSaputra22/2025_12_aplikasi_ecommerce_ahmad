@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use App\Enums\VendorStatus;
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Vendor extends Model
 {
@@ -20,7 +20,7 @@ class Vendor extends Model
         'banner',
         'is_verified',
         'rating',
-        'status'
+        'status',
     ];
 
     protected $casts = [
@@ -30,9 +30,15 @@ class Vendor extends Model
     protected static function booted()
     {
         static::creating(function ($vendor) {
-            if (empty($vendor->slug)) {
-                $vendor->slug = Str::slug($vendor->store_name);
+            $base = Str::slug($vendor->slug ?: $vendor->store_name) ?: 'vendor';
+            $slug = $base;
+            $suffix = 2;
+
+            while (static::query()->where('slug', $slug)->exists()) {
+                $slug = $base.'-'.$suffix++;
             }
+
+            $vendor->slug = $slug;
         });
     }
 

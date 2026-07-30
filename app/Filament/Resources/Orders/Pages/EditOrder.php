@@ -2,13 +2,19 @@
 
 namespace App\Filament\Resources\Orders\Pages;
 
+use App\Enums\OrderPaymentStatus;
+use App\Enums\OrderStatus;
+use App\Enums\ShipmentStatus;
+use App\Filament\Resources\Orders\OrderResource;
 use App\Models\ProductVariant;
+use App\Models\ShipmentAddress;
+use App\Models\ShipmentCourier;
 use App\Services\AdminFeeService;
 use Filament\Actions\DeleteAction;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\Model;
 use Filament\Resources\Pages\EditRecord;
-use App\Filament\Resources\Orders\OrderResource;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class EditOrder extends EditRecord
 {
@@ -17,7 +23,37 @@ class EditOrder extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->visible(fn (): bool => $this->record->status === OrderStatus::Pending
+                    && $this->record->payment_status === OrderPaymentStatus::Pending
+                    && $this->record->orderVendors()->count() === 1)
+                ->using(function (Model $record): bool {
+                    return DB::transaction(function () use ($record): bool {
+                        $lockedOrder = $record->newQuery()
+                            ->whereKey($record->getKey())
+                            ->where('status', OrderStatus::Pending)
+                            ->where('payment_status', OrderPaymentStatus::Pending)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if (! $lockedOrder) {
+                            return false;
+                        }
+
+                        $items = $lockedOrder->orderVendors()
+                            ->with('orderItems')
+                            ->get()
+                            ->flatMap->orderItems;
+
+                        foreach ($items as $item) {
+                            ProductVariant::query()
+                                ->whereKey($item->product_variant_id)
+                                ->increment('stock', (int) $item->quantity);
+                        }
+
+                        return (bool) $lockedOrder->delete();
+                    });
+                }),
         ];
     }
 
@@ -25,22 +61,16 @@ class EditOrder extends EditRecord
     {
         // dd($data);
         $order = $this->record;
-        $orderVendors = $order->orderVendors();
-        $orderItems = [];
-
-        $orderItems = $orderVendors->with('orderItems')->get()->flatMap(function ($orderVendor) {
-            return $orderVendor->orderItems->toArray();
-        })->toArray();
-
-
-        $shipment = $order->orderVendors()->with('shipment')->first()->shipment;
+        $orderVendor = $order->orderVendors()->with(['orderItems', 'shipment'])->first();
+        $orderItems = $orderVendor?->orderItems->toArray() ?? [];
+        $shipment = $orderVendor?->shipment;
 
         $payment = $order->payment;
 
         $data = array_merge($data, [
             'items' => $orderItems,
             'user_id' => $order->user_id,
-            'vendor_id' => $orderVendors->first()->vendor_id,
+            'vendor_id' => $orderVendor?->vendor_id,
             'shipment_address_id' => $shipment->shipment_address_id ?? null,
             'shipment_courier_id' => $shipment->shipment_courier_id ?? null,
             'shipping_cost' => $shipment->shipping_cost ?? 0,
@@ -55,12 +85,34 @@ class EditOrder extends EditRecord
         return $data;
     }
 
-
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         DB::beginTransaction();
         try {
             $adminFeeService = app(AdminFeeService::class);
+
+            $record = $record->newQuery()->whereKey($record->getKey())->lockForUpdate()->firstOrFail();
+            if (
+                $record->status !== OrderStatus::Pending
+                || $record->payment_status !== OrderPaymentStatus::Pending
+                || $record->orderVendors()->count() !== 1
+            ) {
+                throw ValidationException::withMessages([
+                    'items' => 'Hanya order pending dengan satu vendor yang dapat diedit.',
+                ]);
+            }
+
+            $validAddress = ShipmentAddress::query()
+                ->whereKey($data['shipment_address_id'])
+                ->where('user_id', $data['user_id'])
+                ->exists();
+            $courier = ShipmentCourier::query()->find($data['shipment_courier_id']);
+
+            if (! $validAddress || ! $courier) {
+                throw ValidationException::withMessages([
+                    'shipment_address_id' => 'Alamat atau kurir pengiriman tidak valid.',
+                ]);
+            }
 
             // Update order main data
             $record->update([
@@ -70,14 +122,14 @@ class EditOrder extends EditRecord
             ]);
 
             // Get or create order vendor
-            $orderVendor = $record->orderVendors()->first();
+            $orderVendor = $record->orderVendors()->lockForUpdate()->firstOrFail();
+            $oldItems = $orderVendor->orderItems()->lockForUpdate()->get();
 
-            if (!$orderVendor) {
-                $orderVendor = $record->orderVendors()->create([
-                    'vendor_id' => $data['vendor_id'],
-                    'subtotal' => 0,
-                    'status' => \App\Enums\OrderVendorStatus::Pending,
-                ]);
+            // Kembalikan reservasi stok lama sebelum menghitung susunan item baru.
+            foreach ($oldItems as $oldItem) {
+                ProductVariant::query()
+                    ->whereKey($oldItem->product_variant_id)
+                    ->increment('stock', (int) $oldItem->quantity);
             }
 
             // Delete existing order items
@@ -86,16 +138,30 @@ class EditOrder extends EditRecord
             // Calculate subtotal and create new order items
             $subtotal = 0;
             foreach ($data['items'] as $item) {
-                $variant = ProductVariant::find($item['product_variant_id']);
-                $itemTotal = $variant->price * $item['quantity'];
+                $variant = ProductVariant::query()
+                    ->whereKey($item['product_variant_id'])
+                    ->whereHas('product', fn ($query) => $query->where('vendor_id', $data['vendor_id']))
+                    ->lockForUpdate()
+                    ->first();
+                $quantity = (int) $item['quantity'];
+
+                if (! $variant || $quantity < 1 || $quantity > (int) $variant->stock) {
+                    throw ValidationException::withMessages([
+                        'items' => 'Produk tidak valid atau stok tidak mencukupi.',
+                    ]);
+                }
+
+                $itemTotal = $variant->price * $quantity;
                 $subtotal += $itemTotal;
 
                 $orderVendor->orderItems()->create([
                     'product_variant_id' => $item['product_variant_id'],
-                    'quantity' => $item['quantity'],
+                    'quantity' => $quantity,
                     'price' => $variant->price,
                     'total' => $itemTotal,
                 ]);
+
+                $variant->decrement('stock', $quantity);
             }
 
             // Update order vendor subtotal
@@ -104,7 +170,7 @@ class EditOrder extends EditRecord
 
             // Update or create shipment
             $shipment = $orderVendor->shipment;
-            $shippingCost = $data['shipping_cost'] ?? 0;
+            $shippingCost = (float) $courier->price;
 
             if ($shipment) {
                 $shipment->update([
@@ -117,7 +183,7 @@ class EditOrder extends EditRecord
                     'shipment_address_id' => $data['shipment_address_id'],
                     'shipment_courier_id' => $data['shipment_courier_id'],
                     'shipping_cost' => $shippingCost,
-                    'status' => \App\Enums\ShipmentStatus::Pending,
+                    'status' => ShipmentStatus::Pending,
                 ]);
             }
 

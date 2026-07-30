@@ -167,11 +167,11 @@
 
             <div class="swiper vendorProducts  " data-aos="fade-up">
                 <div class="swiper-wrapper ">
-                    @foreach ($product->vendor->products as $key => $product)
-                    <a href="{{ route('produk.detail', ['slug' => $product->slug]) }}" class="swiper-slide "
-                        wire:key="product-{{ $product->id }}">
+                    @foreach ($product->vendor->products as $key => $relatedProduct)
+                    <a href="{{ route('produk.detail', ['slug' => $relatedProduct->slug]) }}" class="swiper-slide "
+                        wire:key="product-{{ $relatedProduct->id }}">
                         <div class="relative w-full aspect-4/3 overflow-hidden rounded-xl">
-                            <img src="{{ Storage::url($productImages->first()?->image ?? 'products/product_placeholder.jpg') }}"
+                            <img src="{{ Storage::url($relatedProduct->productImages->first()?->image ?? 'products/product_placeholder.jpg') }}"
                                 class="w-full h-full object-cover">
 
                             <span
@@ -181,10 +181,10 @@
                         </div>
                         <div class="mt-4 space-y-2">
                             <h1 class="text-xl font-light text-overflow-ellipsis truncate uppercase">
-                                {{ $product->name }}
+                                {{ $relatedProduct->name }}
                             </h1>
                             <h1 class="text-lg font-semibold mt-2">Rp.
-                                {{ number_format($product->price, 0, ',', ',') }}
+                                {{ number_format((float) $relatedProduct->price, 0, ',', ',') }}
                             </h1>
                             <div class="flex gap-2 text-primary items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -193,7 +193,7 @@
                                         d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
                                 </svg>
                                 <p class="truncate text-md/loose w-1/2">Toko
-                                    {{ $product->vendor->store_name  ?? 'Nama Toko' }}
+                                    {{ $relatedProduct->vendor?->store_name ?? 'Nama Toko' }}
                                 </p>
 
                             </div>

@@ -3,11 +3,16 @@
 namespace App\Filament\Resources\Orders\Schemas;
 
 use App\Models\ProductVariant;
+use App\Models\Role;
 use App\Models\ShipmentCourier;
+use App\Models\User;
+use App\Models\UserRole;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class OrderFormUtils
 {
@@ -74,6 +79,7 @@ class OrderFormUtils
                     TextInput::make('email')
                         ->label('Email address')
                         ->email()
+                        ->unique(table: 'users', column: 'email')
                         ->required(),
                     TextInput::make('phone')
                         ->tel(),
@@ -114,22 +120,35 @@ class OrderFormUtils
     // function to create customer and shipment address, return user id
     public static function createCustomerData(array $data): int
     {
-        $user = \App\Models\User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'],
-            'password' => bcrypt($data['password']),
-        ]);
+        $role = Role::query()->where('name', 'customer')->first();
+        if (! $role) {
+            throw ValidationException::withMessages([
+                'email' => 'Role customer belum tersedia.',
+            ]);
+        }
 
-        $address = \App\Models\ShipmentAddress::create([
-            'user_id' => $user->id,
-            'province' => $data['province'],
-            'city' => $data['city'],
-            'district' => $data['district'],
-            'postal_code' => $data['postal_code'],
-            'address' => $data['address'],
-        ]);
+        return DB::transaction(function () use ($data, $role): int {
+            $user = User::query()->create([
+                'name' => $data['name'],
+                'email' => mb_strtolower(trim($data['email'])),
+                'phone' => $data['phone'] ?? null,
+                'password' => bcrypt($data['password']),
+            ]);
 
-        return $user->id;
+            UserRole::query()->create([
+                'user_id' => $user->id,
+                'role_id' => $role->id,
+            ]);
+
+            $user->addresses()->create([
+                'province' => $data['province'],
+                'city' => $data['city'],
+                'district' => $data['district'],
+                'postal_code' => $data['postal_code'],
+                'address' => $data['address'],
+            ]);
+
+            return $user->id;
+        });
     }
 }

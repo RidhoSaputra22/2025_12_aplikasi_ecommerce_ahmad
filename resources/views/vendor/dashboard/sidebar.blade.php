@@ -124,15 +124,19 @@
 
 
 
-        <a href="{{ route('user.logout') }}" class="block px-3 py-2 rounded-sm hover:bg-gray-50 text-red-600">
-            <span class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9" />
-                </svg>
-                Logout
-            </span>
-        </a>
+        <form method="POST" action="{{ route('user.logout') }}">
+            @csrf
+            <button type="submit"
+                class="block w-full text-left px-3 py-2 rounded-sm hover:bg-gray-50 text-red-600 cursor-pointer">
+                <span class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9" />
+                    </svg>
+                    Logout
+                </span>
+            </button>
+        </form>
     </div>
 </div>

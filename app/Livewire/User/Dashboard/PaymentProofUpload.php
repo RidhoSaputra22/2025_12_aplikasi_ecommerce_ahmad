@@ -5,9 +5,13 @@ namespace App\Livewire\User\Dashboard;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -16,6 +20,7 @@ class PaymentProofUpload extends Component
     use WithFileUploads;
 
     public ?int $orderId = null;
+
     public $paymentProof = null;
 
     public function mount(?int $orderId = null): void
@@ -25,7 +30,7 @@ class PaymentProofUpload extends Component
 
     public function save(): void
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return;
         }
 
@@ -42,54 +47,97 @@ class PaymentProofUpload extends Component
             ->where('user_id', Auth::id())
             ->first();
 
-        if (!$order || !$order->payment) {
+        if (! $order || ! $order->payment) {
             session()->flash('error', 'Pesanan tidak ditemukan.');
+
             return;
         }
 
         $payment = $order->payment;
 
-        if (!in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Failed])) {
+        if (! in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Failed])) {
             session()->flash('error', 'Bukti pembayaran hanya bisa diunggah saat status menunggu pembayaran.');
+
             return;
         }
 
-        // Store file
-        $path = $this->paymentProof->store('payments/proofs', 'public');
+        $path = null;
+        $oldPath = $payment->payment_proof;
 
-        // Delete old file
-        if ($payment->payment_proof) {
-            Storage::disk('public')->delete($payment->payment_proof);
+        try {
+            $path = $this->paymentProof->store('payments/proofs', 'public');
+
+            DB::transaction(function () use ($order, $path): void {
+                $lockedOrder = Order::query()
+                    ->whereKey($order->id)
+                    ->where('user_id', Auth::id())
+                    ->lockForUpdate()
+                    ->firstOrFail();
+                $lockedPayment = $lockedOrder->payment()->lockForUpdate()->first();
+
+                if (! $lockedPayment || ! in_array($lockedPayment->status, [PaymentStatus::Pending, PaymentStatus::Failed], true)) {
+                    throw ValidationException::withMessages([
+                        'paymentProof' => 'Status pembayaran sudah berubah. Muat ulang halaman.',
+                    ]);
+                }
+
+                $lockedPayment->update([
+                    'payment_proof' => $path,
+                    'status' => PaymentStatus::WaitingConfirmation,
+                ]);
+                $lockedOrder->update([
+                    'payment_status' => OrderPaymentStatus::WaitingConfirmation,
+                ]);
+            });
+        } catch (ValidationException $e) {
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
+
+            throw $e;
+        } catch (\Throwable $e) {
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
+
+            Log::error('Gagal menyimpan bukti pembayaran.', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+            session()->flash('error', 'Bukti pembayaran gagal disimpan. Silakan coba lagi.');
+
+            return;
         }
 
-        // Update payment
-        $payment->update([
-            'payment_proof' => $path,
-            'status' => PaymentStatus::WaitingConfirmation,
-        ]);
-
-        // Update order
-        $order->update([
-            'payment_status' => OrderPaymentStatus::WaitingConfirmation,
-        ]);
+        if ($oldPath && $oldPath !== $path) {
+            Storage::disk('public')->delete($oldPath);
+        }
 
         // Notify admin
-        $adminUsers = \App\Models\User::whereHas('role', function ($q) {
+        $adminUsers = User::whereHas('role', function ($q) {
             $q->where('name', 'admin');
         })->get();
 
         foreach ($adminUsers as $admin) {
-            $admin->notifications()->create([
-                'id' => Str::uuid(),
-                'type' => 'App\\Notifications\\PaymentProofUploaded',
-                'data' => json_encode([
-                    'title' => 'Bukti Pembayaran Diunggah',
-                    'message' => 'Pesanan #' . $order->order_number . ' mengunggah bukti pembayaran.',
+            try {
+                $admin->notifications()->create([
+                    'id' => Str::uuid(),
+                    'type' => 'App\\Notifications\\PaymentProofUploaded',
+                    'data' => json_encode([
+                        'title' => 'Bukti Pembayaran Diunggah',
+                        'message' => 'Pesanan #'.$order->order_number.' mengunggah bukti pembayaran.',
+                        'order_id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'user_name' => Auth::user()->name,
+                    ]),
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('Gagal mengirim notifikasi bukti pembayaran.', [
                     'order_id' => $order->id,
-                    'order_number' => $order->order_number,
-                    'user_name' => Auth::user()->name,
-                ]),
-            ]);
+                    'admin_id' => $admin->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         $this->dispatch('payment-proof:uploaded');

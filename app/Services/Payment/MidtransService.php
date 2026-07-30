@@ -5,9 +5,9 @@ namespace App\Services\Payment;
 use App\Contracts\PaymentGatewayInterface;
 use App\DataTransfers\Payment\MidtransCallbackData;
 use App\DataTransfers\Payment\SnapTransactionData;
+use App\Exceptions\InvalidPaymentSignatureException;
 use Illuminate\Support\Facades\Log;
 use Midtrans\Config as MidtransConfig;
-use Midtrans\Notification;
 use Midtrans\Snap;
 use Midtrans\Transaction;
 
@@ -60,7 +60,7 @@ class MidtransService implements PaymentGatewayInterface
 
             Log::channel('payment')->info('Midtrans: Snap token created', [
                 'order_id' => $data->orderNumber,
-                'snap_token' => substr($snapToken, 0, 20) . '...',
+                'snap_token' => substr($snapToken, 0, 20).'...',
             ]);
 
             return [
@@ -97,7 +97,7 @@ class MidtransService implements PaymentGatewayInterface
         } catch (\Exception $e) {
             Log::channel('payment')->error('Midtrans: Notification processing failed', [
                 'error' => $e->getMessage(),
-                'payload' => $payload,
+                'order_id' => $payload['order_id'] ?? 'unknown',
             ]);
 
             throw $e;
@@ -152,7 +152,7 @@ class MidtransService implements PaymentGatewayInterface
     /**
      * Verifikasi signature key dari notification Midtrans.
      *
-     * @throws \RuntimeException
+     * @throws InvalidPaymentSignatureException
      */
     private function verifySignature(array $payload): void
     {
@@ -162,10 +162,14 @@ class MidtransService implements PaymentGatewayInterface
         $signatureKey = $payload['signature_key'] ?? '';
         $serverKey = config('midtrans.server_key');
 
-        $expectedSignature = hash('sha512', $orderId . $statusCode . $grossAmount . $serverKey);
+        if (! is_string($serverKey) || $serverKey === '') {
+            throw new \LogicException('Midtrans server key is not configured.');
+        }
 
-        if ($signatureKey !== $expectedSignature) {
-            throw new \RuntimeException('Invalid Midtrans signature key.');
+        $expectedSignature = hash('sha512', $orderId.$statusCode.$grossAmount.$serverKey);
+
+        if (! is_string($signatureKey) || ! hash_equals($expectedSignature, $signatureKey)) {
+            throw new InvalidPaymentSignatureException('Invalid Midtrans signature key.');
         }
     }
 
@@ -178,6 +182,6 @@ class MidtransService implements PaymentGatewayInterface
             ? 'https://app.midtrans.com/snap/v2/vtweb/'
             : 'https://app.sandbox.midtrans.com/snap/v2/vtweb/';
 
-        return $baseUrl . $token;
+        return $baseUrl.$token;
     }
 }

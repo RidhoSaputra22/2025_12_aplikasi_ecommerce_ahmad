@@ -64,6 +64,16 @@
             ])
 
             @endcomponent
+
+            @component('components.form.input', [
+            'label' => 'Konfirmasi Kata Sandi',
+            'type' => 'password',
+            'wireModel' => 'password_confirmation',
+            'placeholder' => 'Ulangi kata sandi Anda',
+            'required' => true,
+            ])
+
+            @endcomponent
             @component('components.form.button', [
             'label' => 'Daftar',
             'class' => 'w-full bg-primary text-white',

@@ -21,8 +21,11 @@ class Regist extends Component
     #[Validate('nullable|string|max:20')]
     public string $phone = '';
 
-    #[Validate('required|min:8', message: 'Kata sandi harus diisi dan minimal 8 karakter.')]
+    #[Validate('required|min:8|confirmed', message: 'Kata sandi minimal 8 karakter dan konfirmasi harus sama.')]
     public string $password = '';
+
+    #[Validate('required|min:8', message: 'Konfirmasi kata sandi wajib diisi.')]
+    public string $password_confirmation = '';
 
     #[Validate('required|in:customer,vendor', message: 'Pilih peran akun Anda.')]
     public string $role = 'customer';

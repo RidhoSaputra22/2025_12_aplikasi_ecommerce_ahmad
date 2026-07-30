@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Vendor\Dashboard;
 
+use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderVendorStatus;
-use App\Enums\ShipmentStatus;
 use App\Models\OrderVendor;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -14,6 +14,7 @@ class OrderPage extends Component
     use WithPagination;
 
     public ?string $selectedStatus = null;
+
     public ?string $search = null;
 
     public function updatingSearch(): void
@@ -34,17 +35,19 @@ class OrderPage extends Component
     public function processOrder(int $orderVendorId): void
     {
         $vendor = Auth::user()?->vendor;
-        if (!$vendor) {
+        if (! $vendor) {
             return;
         }
 
         $orderVendor = OrderVendor::where('id', $orderVendorId)
             ->where('vendor_id', $vendor->id)
             ->where('status', OrderVendorStatus::Pending)
+            ->whereHas('order', fn ($query) => $query->where('payment_status', OrderPaymentStatus::Paid))
             ->first();
 
-        if (!$orderVendor) {
+        if (! $orderVendor) {
             session()->flash('error', 'Pesanan tidak ditemukan atau tidak bisa diproses.');
+
             return;
         }
 
@@ -56,7 +59,7 @@ class OrderPage extends Component
     {
         $vendor = Auth::user()?->vendor;
 
-        if (!$vendor) {
+        if (! $vendor) {
             return view('vendor.dashboard.order-page', [
                 'orderVendors' => collect(),
                 'statusOptions' => [],
@@ -76,13 +79,13 @@ class OrderPage extends Component
             })
             ->when($this->search, function ($query) {
                 $query->whereHas('order', function ($q) {
-                    $q->where('order_number', 'like', '%' . $this->search . '%');
+                    $q->where('order_number', 'like', '%'.$this->search.'%');
                 });
             })
             ->latest('created_at')
             ->paginate(10);
 
-        $statusOptions = array_map(fn($case) => [
+        $statusOptions = array_map(fn ($case) => [
             'value' => $case->value,
             'label' => $case->getLabel(),
         ], OrderVendorStatus::cases());

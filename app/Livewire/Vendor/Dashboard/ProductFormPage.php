@@ -155,6 +155,7 @@ class ProductFormPage extends Component
             'weight' => ['required', 'numeric', 'min:0'],
             'status' => ['required', 'in:draft,active,archived'],
             'variants' => ['required', 'array', 'min:1'],
+            'variants.*.id' => ['nullable', 'integer'],
             'variants.*.variant_name' => ['required', 'string', 'max:100'],
             'variants.*.sku' => ['required', 'string', 'max:50', 'distinct'],
             'variants.*.price' => ['required', 'numeric', 'min:0'],

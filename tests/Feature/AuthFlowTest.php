@@ -25,6 +25,7 @@ class AuthFlowTest extends TestCase
             ->set('email', 'customer.baru@example.test')
             ->set('phone', '08123456789')
             ->set('password', 'password-aman')
+            ->set('password_confirmation', 'password-aman')
             ->set('role', 'customer')
             ->call('regist')
             ->assertHasNoErrors()
@@ -61,7 +62,7 @@ class AuthFlowTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('user.logout'))
-            ->assertRedirect(route('welcome'));
+            ->assertRedirect(route('user.login'));
 
         $this->assertGuest();
     }

@@ -47,6 +47,8 @@ class VendorForm
                     ->schema([
                         Select::make('user_id')
                             ->relationship('user', 'name')
+                            ->unique(ignoreRecord: true)
+                            ->disabledOn('edit')
                             ->required(),
                         TextInput::make('store_name')
                             ->required(),

@@ -14,6 +14,13 @@ class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable;
 
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user): void {
+            $user->userRoles()->delete();
+        });
+    }
+
     protected $fillable = [
         'name',
         'email',
@@ -27,6 +34,7 @@ class User extends Authenticatable implements FilamentUser
 
     protected $casts = [
         'status' => UserStatus::class,
+        'password' => 'hashed',
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
     ];

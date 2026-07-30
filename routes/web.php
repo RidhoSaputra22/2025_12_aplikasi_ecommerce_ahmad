@@ -50,6 +50,6 @@ Route::post('/user/logout', function (Request $request) {
     $request->session()->invalidate();
     $request->session()->regenerateToken();
 
-    return redirect()->route('welcome');
+    return redirect()->route('user.login');
 })->middleware('auth')->name('user.logout');
 Route::get('/user/register', Regist::class)->name('user.register');

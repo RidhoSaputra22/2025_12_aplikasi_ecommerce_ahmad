@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users\Schemas;
 
 use App\Enums\UserStatus;
+use App\Models\Role;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -19,6 +20,7 @@ class UserForm
                 TextInput::make('email')
                     ->label('Email address')
                     ->email()
+                    ->unique(ignoreRecord: true)
                     ->required(),
                 TextInput::make('phone')
                     ->tel(),
@@ -27,6 +29,11 @@ class UserForm
                     ->password()
                     ->revealable()
                     ->visibleOn('create')
+                    ->required(),
+                Select::make('role_id')
+                    ->label('Role')
+                    ->options(fn () => Role::query()->orderBy('name')->pluck('name', 'id'))
+                    ->rules(['exists:roles,id'])
                     ->required(),
                 DateTimePicker::make('email_verified_at'),
                 Select::make('status')

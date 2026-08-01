@@ -5,6 +5,13 @@
             <h1 class="text-xl font-semibold mb-6">Filter Produk</h1>
 
             <div class="space-y-6">
+                @component('components.form.input', [
+                'label' => 'Vendor',
+                'wireModel' => 'vendorSearch',
+                'placeholder' => 'Cari nama toko...',
+                'live' => true,
+                ]) @endcomponent
+
                 @component('components.form.select', [
                 'label' => 'Kategori',
                 'wireModel' => 'selectedCategorySlug',

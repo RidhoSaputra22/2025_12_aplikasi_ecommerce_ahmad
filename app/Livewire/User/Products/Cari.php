@@ -16,6 +16,8 @@ class Cari extends Component
 
     public string $search = '';
 
+    public string $vendorSearch = '';
+
     public ?string $selectedCategorySlug = null;
 
     public ?string $selectedHarga = null;
@@ -36,6 +38,7 @@ class Cari extends Component
     {
         if (in_array($property, [
             'search',
+            'vendorSearch',
             'selectedCategorySlug',
             'selectedHarga',
             'selectedSortBy',
@@ -82,7 +85,16 @@ class Cari extends Component
         if ($this->search) {
             $query->where(function ($q) {
                 $q->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('description', 'like', '%'.$this->search.'%');
+                    ->orWhere('description', 'like', '%'.$this->search.'%')
+                    ->orWhereHas('vendor', function ($vendorQuery) {
+                        $vendorQuery->where('store_name', 'like', '%'.$this->search.'%');
+                    });
+            });
+        }
+
+        if ($this->vendorSearch) {
+            $query->whereHas('vendor', function ($vendorQuery) {
+                $vendorQuery->where('store_name', 'like', '%'.$this->vendorSearch.'%');
             });
         }
 

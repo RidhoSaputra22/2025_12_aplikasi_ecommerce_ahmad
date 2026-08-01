@@ -194,7 +194,7 @@ $statusColors = [
         <div class="border rounded-lg p-5 space-y-4">
             <h3 class="text-lg font-semibold">Aksi</h3>
 
-            @if ($orderVendor->status->value === 'pending')
+            @if ($orderVendor->status->value === 'pending' && $orderVendor->order?->hasConfirmedPayment())
             <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p class="text-sm text-yellow-700 mb-3">Pesanan ini menunggu untuk diproses.</p>
                 <button type="button" wire:click="processOrder"
@@ -202,6 +202,10 @@ $statusColors = [
                     class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90">
                     Proses Pesanan
                 </button>
+            </div>
+            @elseif ($orderVendor->status->value === 'pending')
+            <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p class="text-sm text-yellow-700">Pesanan belum bisa diproses karena pembayaran masih menunggu konfirmasi.</p>
             </div>
             @elseif ($orderVendor->status->value === 'processed')
             <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">

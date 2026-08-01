@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\OrderPaymentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Enums\OrderStatus;
-use App\Enums\OrderPaymentStatus;
+use App\Enums\PaymentStatus;
 
 class Order extends Model
 {
@@ -45,5 +46,11 @@ class Order extends Model
     public function payment()
     {
         return $this->hasOne(Payment::class);
+    }
+
+    public function hasConfirmedPayment(): bool
+    {
+        return $this->payment_status === OrderPaymentStatus::Paid
+            || $this->payment?->status === PaymentStatus::Success;
     }
 }

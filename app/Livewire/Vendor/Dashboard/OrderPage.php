@@ -4,6 +4,7 @@ namespace App\Livewire\Vendor\Dashboard;
 
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderVendorStatus;
+use App\Enums\PaymentStatus;
 use App\Models\OrderVendor;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -42,7 +43,11 @@ class OrderPage extends Component
         $orderVendor = OrderVendor::where('id', $orderVendorId)
             ->where('vendor_id', $vendor->id)
             ->where('status', OrderVendorStatus::Pending)
-            ->whereHas('order', fn ($query) => $query->where('payment_status', OrderPaymentStatus::Paid))
+            ->where(function ($query) {
+                $query
+                    ->whereHas('order', fn ($orderQuery) => $orderQuery->where('payment_status', OrderPaymentStatus::Paid))
+                    ->orWhereHas('order.payment', fn ($paymentQuery) => $paymentQuery->where('status', PaymentStatus::Success));
+            })
             ->first();
 
         if (! $orderVendor) {

@@ -4,6 +4,7 @@ namespace App\Livewire\Vendor\Dashboard;
 
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderVendorStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\ShipmentStatus;
 use App\Models\OrderVendor;
 use Illuminate\Support\Facades\Auth;
@@ -59,7 +60,7 @@ class OrderDetailPage extends Component
         if (
             ! $orderVendor
             || $orderVendor->status !== OrderVendorStatus::Pending
-            || $orderVendor->order?->payment_status !== OrderPaymentStatus::Paid
+            || ! $orderVendor->order?->hasConfirmedPayment()
         ) {
             session()->flash('error', 'Pesanan tidak bisa diproses.');
 
@@ -69,7 +70,11 @@ class OrderDetailPage extends Component
         $updated = OrderVendor::query()
             ->whereKey($orderVendor->id)
             ->where('status', OrderVendorStatus::Pending)
-            ->whereHas('order', fn ($query) => $query->where('payment_status', OrderPaymentStatus::Paid))
+            ->where(function ($query) {
+                $query
+                    ->whereHas('order', fn ($orderQuery) => $orderQuery->where('payment_status', OrderPaymentStatus::Paid))
+                    ->orWhereHas('order.payment', fn ($paymentQuery) => $paymentQuery->where('status', PaymentStatus::Success));
+            })
             ->update(['status' => OrderVendorStatus::Processed]);
 
         if ($updated !== 1) {

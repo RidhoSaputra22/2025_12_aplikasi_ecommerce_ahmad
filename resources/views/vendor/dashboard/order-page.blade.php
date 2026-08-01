@@ -119,7 +119,7 @@
                     {{-- Order Footer --}}
                     <div class="bg-gray-50 px-5 py-3 flex flex-wrap items-center justify-between gap-3 border-t">
                         <div class="flex items-center gap-3">
-                            @if ($orderVendor->status->value === 'pending')
+                            @if ($orderVendor->status->value === 'pending' && $orderVendor->order?->hasConfirmedPayment())
                                 <button type="button" wire:click="processOrder({{ $orderVendor->id }})"
                                     wire:confirm="Proses pesanan ini?"
                                     class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:opacity-90">

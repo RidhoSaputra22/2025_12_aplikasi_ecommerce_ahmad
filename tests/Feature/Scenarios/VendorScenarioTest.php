@@ -5,6 +5,7 @@ namespace Tests\Feature\Scenarios;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\OrderVendorStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\ShipmentStatus;
 use App\Enums\VendorWalletTransactionType;
 use App\Livewire\User\Auth\Login;
@@ -284,6 +285,45 @@ class VendorScenarioTest extends TestCase
 
         $this->assertSame(OrderVendorStatus::Processed, $fixture['orderVendor']->fresh()->status);
         $this->assertSame(OrderVendorStatus::Pending, $unpaidFixture['orderVendor']->fresh()->status);
+    }
+
+    public function test_35a_vendor_tetap_bisa_memproses_order_jika_payment_berhasil_tapi_status_order_belum_sinkron(): void
+    {
+        ['user' => $vendorUser, 'vendor' => $vendor] = $this->vendorActor();
+        $customer = $this->actor('customer');
+        $fixture = $this->orderFor(
+            $customer,
+            $vendor,
+            OrderStatus::Paid,
+            OrderPaymentStatus::Pending,
+        );
+
+        $fixture['payment']->update(['status' => PaymentStatus::Success]);
+
+        Livewire::actingAs($vendorUser)
+            ->test(OrderDetailPage::class, ['orderId' => $fixture['orderVendor']->id])
+            ->call('processOrder')
+            ->assertHasNoErrors()
+            ->assertSee('Pesanan berhasil diproses.');
+
+        $this->assertSame(OrderVendorStatus::Processed, $fixture['orderVendor']->fresh()->status);
+    }
+
+    public function test_35b_vendor_tidak_melihat_tombol_proses_untuk_order_belum_dibayar(): void
+    {
+        ['user' => $vendorUser, 'vendor' => $vendor] = $this->vendorActor();
+        $customer = $this->actor('customer');
+        $fixture = $this->orderFor(
+            $customer,
+            $vendor,
+            OrderStatus::Pending,
+            OrderPaymentStatus::Pending,
+        );
+
+        Livewire::actingAs($vendorUser)
+            ->test(OrderDetailPage::class, ['orderId' => $fixture['orderVendor']->id])
+            ->assertDontSee('Proses Pesanan')
+            ->assertSee('Pesanan belum bisa diproses karena pembayaran masih menunggu konfirmasi.');
     }
 
     public function test_36_vendor_mengisi_data_pengiriman_dan_nomor_resi(): void

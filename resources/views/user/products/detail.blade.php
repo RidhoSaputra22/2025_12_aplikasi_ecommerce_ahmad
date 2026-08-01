@@ -220,7 +220,8 @@
                             alt="" class="size-14 rounded-full object-cover object-center ">
                         <div class="">
                             <h1 class="text-lg font-semibold ">{{ $review->user->name }}</h1>
-                            <p class="text-sm/normal font-light">{{ $review->user->email }}</p>
+
+                            <p class="text-sm/normal font-light">{{ $review->user->phone . ' - ' . $review->user->email }}</p>
                         </div>
                     </div>
                     <div>

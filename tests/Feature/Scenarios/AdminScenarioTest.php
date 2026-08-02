@@ -14,6 +14,9 @@ use App\Filament\Resources\Orders\Pages\EditOrder;
 use App\Filament\Resources\Orders\Pages\ListOrders;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
+use App\Filament\Resources\ShipParties\Pages\CreateShipParty;
+use App\Filament\Resources\ShipParties\Pages\EditShipParty;
+use App\Filament\Resources\ShipParties\Pages\ListShipParties;
 use App\Filament\Resources\Shipments\Pages\ListShipments;
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
@@ -26,6 +29,7 @@ use App\Livewire\User\Auth\Login;
 use App\Models\Category;
 use App\Models\PlatformSetting;
 use App\Models\Role;
+use App\Models\ShipmentCourier;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\VendorWallet;
@@ -250,6 +254,80 @@ class AdminScenarioTest extends TestCase
         Livewire::actingAs($admin)
             ->test(ListProducts::class)
             ->assertCanSeeTableRecords([$product]);
+    }
+
+    public function test_54a_admin_melihat_data_pihak_kapal(): void
+    {
+        $admin = $this->actor('admin');
+        $shipParty = $this->actor('pihak_kapal', ['name' => 'Pihak Kapal Admin']);
+
+        Livewire::actingAs($admin)
+            ->test(ListShipParties::class)
+            ->assertCanSeeTableRecords([$shipParty]);
+    }
+
+    public function test_54b_admin_menambah_pihak_kapal_dan_mengaitkan_ke_ekspedisi(): void
+    {
+        $admin = $this->actor('admin');
+        $courier = ShipmentCourier::factory()->create([
+            'name' => 'Pelni',
+            'code' => 'pelni',
+            'service' => 'Kapal Cepat',
+            'user_id' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(CreateShipParty::class)
+            ->fillForm([
+                'name' => 'Akun Pihak Kapal',
+                'email' => 'ship-party-admin@example.test',
+                'phone' => '081234567899',
+                'password' => 'password-aman',
+                'status' => 'active',
+                'shipment_courier_id' => $courier->id,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors()
+            ->assertRedirect();
+
+        $shipParty = User::query()->where('email', 'ship-party-admin@example.test')->firstOrFail();
+        $this->assertSame('pihak_kapal', $shipParty->role?->name);
+        $this->assertSame($shipParty->id, $courier->fresh()->user_id);
+    }
+
+    public function test_54c_admin_mengubah_pihak_kapal_dan_memindahkan_kaitan_ekspedisi(): void
+    {
+        $admin = $this->actor('admin');
+        $shipParty = $this->actor('pihak_kapal', [
+            'name' => 'Pihak Kapal Lama',
+            'phone' => '081234567891',
+        ]);
+        $oldCourier = ShipmentCourier::factory()->create([
+            'name' => 'Pelni Lama',
+            'code' => 'pelni-lama',
+            'service' => 'Reguler',
+            'user_id' => $shipParty->id,
+        ]);
+        $newCourier = ShipmentCourier::factory()->create([
+            'name' => 'Pelni Baru',
+            'code' => 'pelni-baru',
+            'service' => 'Express',
+            'user_id' => null,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(EditShipParty::class, ['record' => $shipParty->getRouteKey()])
+            ->fillForm(fn (array $state) => array_merge($state, [
+                'name' => 'Pihak Kapal Baru',
+                'shipment_courier_id' => $newCourier->id,
+            ]))
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('Pihak Kapal Baru', $shipParty->fresh()->name);
+        $this->assertNull($oldCourier->fresh()->user_id);
+        $this->assertSame($shipParty->id, $newCourier->fresh()->user_id);
+        $this->assertSame('pihak_kapal', $shipParty->fresh()->role?->name);
     }
 
     public function test_55_admin_menambah_mengubah_dan_menghapus_kategori(): void

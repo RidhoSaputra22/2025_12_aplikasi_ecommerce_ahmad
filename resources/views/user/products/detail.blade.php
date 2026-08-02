@@ -154,7 +154,7 @@
                         {{ $product->vendor->store_name }}
                     </h1>
                     <p class="text-sm/normal font-light">
-                        {{ $product->vendor->user->email }}
+                        {{ $product->vendor->user->phone . ' - ' . $product->vendor->user->email }}
                     </p>
                 </div>
             </div>

@@ -197,6 +197,11 @@ $statusColors = [
             @if ($orderVendor->status->value === 'pending' && $orderVendor->order?->hasConfirmedPayment())
             <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p class="text-sm text-yellow-700 mb-3">Pesanan ini menunggu untuk diproses.</p>
+                @if ($orderVendor->shipment?->shipmentCourier?->user_id)
+                <p class="text-xs text-blue-700 mb-3">
+                    Ekspedisi ini terhubung ke portal pihak kapal. Setelah vendor memproses pesanan, pihak kapal yang akan menginput resi dan mengirimkan paket.
+                </p>
+                @endif
                 <button type="button" wire:click="processOrder"
                     wire:confirm="Proses pesanan ini? Status akan berubah menjadi 'Diproses'."
                     class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90">
@@ -209,22 +214,10 @@ $statusColors = [
             </div>
             @elseif ($orderVendor->status->value === 'processed')
             <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
-                <p class="text-sm text-blue-700">Pesanan sedang diproses. Masukkan nomor resi untuk mengirim.</p>
-                <div class="flex items-end gap-3">
-                    <div class="flex-1">
-                        @component('components.form.input', [
-                        'label' => 'Nomor Resi',
-                        'type' => 'text',
-                        'wireModel' => 'tracking_number',
-                        'placeholder' => 'Masukkan nomor resi pengiriman',
-                        'required' => true,
-                        ]) @endcomponent
-                    </div>
-                    <button type="button" wire:click="shipOrder" wire:confirm="Kirim pesanan ini?"
-                        class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90 mb-1">
-                        Kirim Pesanan
-                    </button>
-                </div>
+                <p class="text-sm text-blue-700">Pesanan sedang diproses vendor dan menunggu pengiriman dari pihak kapal.</p>
+                <p class="text-sm text-blue-600">
+                    Vendor tidak perlu menginput resi. Nomor resi dan status kirim akan diperbarui oleh pihak kapal.
+                </p>
             </div>
             @elseif ($orderVendor->status->value === 'shipped')
             <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-lg">

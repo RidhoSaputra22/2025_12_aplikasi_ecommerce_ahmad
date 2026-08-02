@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'admin'],
             ['name' => 'vendor'],
             ['name' => 'customer'],
+            ['name' => 'pihak_kapal'],
         ]);
 
         User::insert([
@@ -56,6 +57,13 @@ class DatabaseSeeder extends Seeder
                 'description' => null,
                 'password' => bcrypt('password'),
             ],
+            [
+                'name' => 'Pihak Kapal',
+                'email' => 'kapal@gmail.com',
+                'foto' => null,
+                'description' => null,
+                'password' => bcrypt('password'),
+            ],
 
         ]);
 
@@ -71,6 +79,10 @@ class DatabaseSeeder extends Seeder
             [
                 'user_id' => 3,
                 'role_id' => 3,
+            ],
+            [
+                'user_id' => 4,
+                'role_id' => 4,
             ],
         ]);
 
@@ -100,7 +112,15 @@ class DatabaseSeeder extends Seeder
 
         Shipment::factory(5)->create();
 
-        ShipmentCourier::factory(3)->create();
+        ShipmentCourier::factory()->create([
+            'name' => 'Pihak Kapal Express',
+            'code' => 'KAPAL-001',
+            'service' => 'SEA-REG',
+            'price' => 20000,
+            'user_id' => 4,
+        ]);
+
+        ShipmentCourier::factory(2)->create();
 
         ShipmentAddress::factory(10)->create(
             [

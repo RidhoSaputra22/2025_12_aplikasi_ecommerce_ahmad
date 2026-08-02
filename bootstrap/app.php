@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'check.admin.role'  => \App\Http\Middleware\CheckAdminRole::class,
+            'check.ship.party.role' => \App\Http\Middleware\CheckShipPartyRole::class,
             'check.vendor.role' => \App\Http\Middleware\CheckVendorRole::class,
             'check.user.role'   => \App\Http\Middleware\CheckUserRole::class,
         ]);

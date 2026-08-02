@@ -47,6 +47,12 @@ class Login extends Component
                 return redirect()->intended(route('vendor.dashboard'));
             }
 
+            if ($roleName === 'pihak_kapal' && Auth::user()?->managedShipmentCourier) {
+                session()->flash('login_role', 'Pihak Kapal');
+
+                return redirect()->intended(route('ship-party.dashboard'));
+            }
+
             // Customer
             session()->flash('login_role', 'Customer');
 

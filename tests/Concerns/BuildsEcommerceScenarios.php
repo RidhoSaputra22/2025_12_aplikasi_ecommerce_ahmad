@@ -29,7 +29,7 @@ trait BuildsEcommerceScenarios
 {
     protected function seedScenarioRoles(): void
     {
-        foreach (['customer', 'vendor', 'admin'] as $role) {
+        foreach (['customer', 'vendor', 'admin', 'pihak_kapal'] as $role) {
             Role::query()->firstOrCreate(['name' => $role]);
         }
     }

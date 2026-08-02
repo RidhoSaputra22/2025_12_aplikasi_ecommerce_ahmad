@@ -304,7 +304,7 @@ class VendorScenarioTest extends TestCase
             ->test(OrderDetailPage::class, ['orderId' => $fixture['orderVendor']->id])
             ->call('processOrder')
             ->assertHasNoErrors()
-            ->assertSee('Pesanan berhasil diproses.');
+            ->assertSee('Pesanan berhasil diproses dan menunggu pengiriman dari pihak kapal.');
 
         $this->assertSame(OrderVendorStatus::Processed, $fixture['orderVendor']->fresh()->status);
     }
@@ -326,7 +326,7 @@ class VendorScenarioTest extends TestCase
             ->assertSee('Pesanan belum bisa diproses karena pembayaran masih menunggu konfirmasi.');
     }
 
-    public function test_36_vendor_mengisi_data_pengiriman_dan_nomor_resi(): void
+    public function test_36_vendor_tidak_lagi_menginput_resi_dan_menunggu_pihak_kapal(): void
     {
         ['user' => $vendorUser, 'vendor' => $vendor] = $this->vendorActor();
         $customer = $this->actor('customer');
@@ -340,13 +340,14 @@ class VendorScenarioTest extends TestCase
 
         Livewire::actingAs($vendorUser)
             ->test(OrderDetailPage::class, ['orderId' => $fixture['orderVendor']->id])
-            ->set('tracking_number', 'RESI-VENDOR-001')
-            ->call('shipOrder')
-            ->assertHasNoErrors();
+            ->assertDontSee('Nomor Resi')
+            ->assertDontSee('Kirim Pesanan')
+            ->assertSee('Vendor tidak perlu menginput resi. Nomor resi dan status kirim akan diperbarui oleh pihak kapal.');
 
         $shipment = $fixture['shipment']->fresh();
-        $this->assertSame('RESI-VENDOR-001', $shipment->tracking_number);
-        $this->assertSame(ShipmentStatus::Shipped, $shipment->status);
+        $this->assertNull($shipment->tracking_number);
+        $this->assertSame(ShipmentStatus::Pending, $shipment->status);
+        $this->assertSame(OrderVendorStatus::Processed, $fixture['orderVendor']->fresh()->status);
     }
 
     public function test_37_vendor_mengubah_status_shipment_menjadi_tiba(): void

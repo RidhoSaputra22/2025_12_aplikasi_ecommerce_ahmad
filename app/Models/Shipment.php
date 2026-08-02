@@ -41,4 +41,9 @@ class Shipment extends Model
     {
         return $this->belongsTo(ShipmentCourier::class);
     }
+
+    public function canAutoShipToShipParty(): bool
+    {
+        return $this->shipmentCourier?->hasShipPartyAccount() === true;
+    }
 }

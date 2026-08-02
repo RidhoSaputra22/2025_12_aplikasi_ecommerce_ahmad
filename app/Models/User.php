@@ -80,4 +80,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(ShipmentAddress::class);
     }
+
+    public function managedShipmentCourier()
+    {
+        return $this->hasOne(ShipmentCourier::class);
+    }
 }

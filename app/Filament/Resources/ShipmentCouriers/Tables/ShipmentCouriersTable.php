@@ -23,6 +23,10 @@ class ShipmentCouriersTable
                 TextColumn::make('service')
                     ->label('Layanan')
                     ->searchable(),
+                TextColumn::make('user.name')
+                    ->label('Akun Pihak Kapal')
+                    ->placeholder('-')
+                    ->searchable(),
                 TextColumn::make('price')
                     ->label('Harga')
                     ->money('IDR')

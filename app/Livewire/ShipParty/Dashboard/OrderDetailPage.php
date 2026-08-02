@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Vendor\Dashboard;
+namespace App\Livewire\ShipParty\Dashboard;
 
 use App\Enums\OrderVendorStatus;
 use App\Models\OrderVendor;
@@ -14,6 +14,8 @@ class OrderDetailPage extends Component
 {
     public ?int $orderId = null;
 
+    public ?string $tracking_number = null;
+
     protected ShipmentWorkflowService $shipmentWorkflowService;
 
     public function boot(ShipmentWorkflowService $shipmentWorkflowService): void
@@ -23,23 +25,14 @@ class OrderDetailPage extends Component
 
     public function mount(?int $orderId = null): void
     {
-        if (! Auth::check()) {
-            $this->redirectRoute('user.login');
-
-            return;
-        }
-
         $this->orderId = $orderId;
     }
 
     public function getOrderVendorProperty(): ?OrderVendor
     {
-        if (! $this->orderId || ! Auth::check()) {
-            return null;
-        }
+        $courier = Auth::user()?->managedShipmentCourier;
 
-        $vendor = Auth::user()?->vendor;
-        if (! $vendor) {
+        if (! $this->orderId || ! $courier) {
             return null;
         }
 
@@ -50,43 +43,43 @@ class OrderDetailPage extends Component
             'orderItems.productVariant.product.category',
             'shipment.shipmentAddress',
             'shipment.shipmentCourier',
+            'vendor',
         ])
-            ->where('id', $this->orderId)
-            ->where('vendor_id', $vendor->id)
+            ->whereKey($this->orderId)
+            ->whereHas('shipment', fn ($query) => $query->where('shipment_courier_id', $courier->id))
             ->first();
     }
 
-    public function processOrder(): void
+    public function shipOrder(): void
     {
         $orderVendor = $this->orderVendor;
-        if (
-            ! $orderVendor
-            || $orderVendor->status !== OrderVendorStatus::Pending
-            || ! $orderVendor->order?->hasConfirmedPayment()
-        ) {
-            session()->flash('error', 'Pesanan tidak bisa diproses.');
+
+        if (! $orderVendor || $orderVendor->status !== OrderVendorStatus::Processed) {
+            session()->flash('error', 'Pesanan tidak bisa dikirim.');
 
             return;
         }
 
-        $result = $this->shipmentWorkflowService->processVendorOrder($orderVendor);
+        $trackingNumber = $this->tracking_number ?: $this->shipmentWorkflowService->generateTrackingNumber($orderVendor->shipment);
+        $shipped = $this->shipmentWorkflowService->shipProcessedOrder($orderVendor, $trackingNumber);
 
-        if (! ($result['success'] ?? false)) {
-            session()->flash('error', 'Status pesanan sudah berubah. Muat ulang halaman.');
+        if (! $shipped) {
+            session()->flash('error', 'Pesanan gagal dikirim atau status sudah berubah.');
 
             return;
         }
 
+        $this->tracking_number = $trackingNumber;
         $orderVendor->refresh();
+        $this->updateMainOrderStatus($orderVendor);
 
-        // Notify customer
         $this->notifyCustomer(
             $orderVendor,
-            'Pesanan Diproses',
-            'Pesanan Anda sedang diproses oleh vendor dan menunggu pengiriman dari pihak kapal.'
+            'Pesanan Dikirim Ekspedisi',
+            'Pihak kapal telah mengirimkan pesanan Anda. No Resi: '.$trackingNumber
         );
 
-        session()->flash('success', 'Pesanan berhasil diproses dan menunggu pengiriman dari pihak kapal.');
+        session()->flash('success', 'Pesanan berhasil dikirim dengan resi: '.$trackingNumber);
     }
 
     public function confirmDelivery(): void
@@ -109,33 +102,31 @@ class OrderDetailPage extends Component
 
         $orderVendor->refresh();
 
-        // Notify customer untuk konfirmasi penerimaan
         $this->notifyCustomer(
             $orderVendor,
-            'Pesanan Tiba — Konfirmasi Penerimaan',
-            'Vendor mengkonfirmasi pesanan Anda telah tiba. Silakan konfirmasi penerimaan di halaman detail pesanan Anda.'
+            'Pesanan Tiba di Tujuan',
+            'Pihak kapal mengkonfirmasi paket Anda telah tiba. Silakan konfirmasi penerimaan di halaman pesanan.'
         );
 
-        session()->flash('success', 'Pesanan dikonfirmasi tiba. Menunggu konfirmasi penerimaan dari pembeli.');
+        session()->flash('success', 'Paket berhasil dikonfirmasi tiba di tujuan.');
     }
 
     protected function updateMainOrderStatus(OrderVendor $orderVendor): void
     {
         $order = $orderVendor->order;
+
         if (! $order) {
             return;
         }
 
         $allVendorOrders = $order->orderVendors()->get();
-
-        // Jika semua shipped/delivered/completed → main order shipped
         $shippedStatuses = [OrderVendorStatus::Shipped, OrderVendorStatus::Delivered, OrderVendorStatus::Completed];
-        if ($allVendorOrders->every(fn ($ov) => in_array($ov->status, $shippedStatuses))) {
+
+        if ($allVendorOrders->every(fn ($item) => in_array($item->status, $shippedStatuses, true))) {
             $order->update(['status' => 'shipped']);
         }
 
-        // Jika semua sudah completed → main order completed
-        if ($allVendorOrders->every(fn ($ov) => $ov->status === OrderVendorStatus::Completed)) {
+        if ($allVendorOrders->every(fn ($item) => $item->status === OrderVendorStatus::Completed)) {
             $order->update(['status' => 'completed']);
         }
     }
@@ -143,6 +134,7 @@ class OrderDetailPage extends Component
     protected function notifyCustomer(OrderVendor $orderVendor, string $title, string $message): void
     {
         $customer = $orderVendor->order?->user;
+
         if (! $customer) {
             return;
         }
@@ -158,16 +150,16 @@ class OrderDetailPage extends Component
                     'order_number' => $orderVendor->order?->order_number,
                 ]),
             ]);
-        } catch (\Throwable $e) {
-            Log::warning('Gagal mengirim notifikasi status pesanan.', [
+        } catch (\Throwable $exception) {
+            Log::warning('Gagal mengirim notifikasi status pengiriman pihak kapal.', [
                 'order_vendor_id' => $orderVendor->id,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
         }
     }
 
     public function render()
     {
-        return view('vendor.dashboard.order-detail-page');
+        return view('ship-party.dashboard.order-detail-page');
     }
 }

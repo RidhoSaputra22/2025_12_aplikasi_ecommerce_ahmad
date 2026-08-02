@@ -12,6 +12,7 @@ use App\Livewire\User\Home\Welcome;
 use App\Livewire\User\Payment\PaymentPage;
 use App\Livewire\User\Products\Cari;
 use App\Livewire\User\Products\Detail;
+use App\Livewire\ShipParty\Dashboard\Dashboard as ShipPartyDashboard;
 use App\Livewire\Vendor\Dashboard\Dashboard as VendorDashboard;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Http\Request;
@@ -36,6 +37,10 @@ Route::middleware(['auth', 'check.user.role'])->group(function () {
 Route::middleware(['auth', 'check.vendor.role'])->group(function () {
     Route::get('/vendor/dashboard', VendorDashboard::class)->name('vendor.dashboard');
     Route::get('/vendor/reports/orders/pdf', OrderReportPdfController::class)->name('vendor.orders.report.pdf');
+});
+
+Route::middleware(['auth', 'check.ship.party.role'])->group(function () {
+    Route::get('/pihak-kapal/dashboard', ShipPartyDashboard::class)->name('ship-party.dashboard');
 });
 
 // Midtrans Webhook (tanpa auth, tanpa CSRF)

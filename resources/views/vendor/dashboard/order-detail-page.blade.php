@@ -191,66 +191,7 @@ $statusColors = [
         @endif
 
         {{-- Actions --}}
-        <div class="border rounded-lg p-5 space-y-4">
-            <h3 class="text-lg font-semibold">Aksi</h3>
 
-            @if ($orderVendor->status->value === 'pending' && $orderVendor->order?->hasConfirmedPayment())
-            <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p class="text-sm text-yellow-700 mb-3">Pesanan ini menunggu untuk diproses.</p>
-                @if ($orderVendor->shipment?->shipmentCourier?->user_id)
-                <p class="text-xs text-blue-700 mb-3">
-                    Ekspedisi ini terhubung ke portal pihak kapal. Setelah vendor memproses pesanan, pihak kapal yang akan menginput resi dan mengirimkan paket.
-                </p>
-                @endif
-                <button type="button" wire:click="processOrder"
-                    wire:confirm="Proses pesanan ini? Status akan berubah menjadi 'Diproses'."
-                    class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90">
-                    Proses Pesanan
-                </button>
-            </div>
-            @elseif ($orderVendor->status->value === 'pending')
-            <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p class="text-sm text-yellow-700">Pesanan belum bisa diproses karena pembayaran masih menunggu konfirmasi.</p>
-            </div>
-            @elseif ($orderVendor->status->value === 'processed')
-            <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
-                <p class="text-sm text-blue-700">Pesanan sedang diproses vendor dan menunggu pengiriman dari pihak kapal.</p>
-                <p class="text-sm text-blue-600">
-                    Vendor tidak perlu menginput resi. Nomor resi dan status kirim akan diperbarui oleh pihak kapal.
-                </p>
-            </div>
-
-            @elseif ($orderVendor->status->value === 'delivered')
-            <div class="p-3 bg-teal-50 border border-teal-200 rounded-lg">
-                <div class="flex items-center gap-2 mb-1">
-                    <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p class="text-sm font-semibold text-teal-700">Anda telah mengkonfirmasi paket tiba</p>
-                </div>
-                <p class="text-sm text-teal-600">Menunggu konfirmasi penerimaan dari pembeli. Dana akan masuk ke wallet
-                    Anda setelah pembeli mengkonfirmasi.</p>
-                @if ($orderVendor->vendor_confirmed_at)
-                <p class="text-xs text-gray-400 mt-1">Dikonfirmasi tiba:
-                    {{ $orderVendor->vendor_confirmed_at->format('d M Y, H:i') }}</p>
-                @endif
-            </div>
-            @elseif ($orderVendor->status->value === 'completed')
-            <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p class="text-sm text-green-700">
-                    <svg class="inline w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Pesanan telah selesai. Dana telah ditambahkan ke wallet Anda.
-                </p>
-                @if ($orderVendor->customer_confirmed_at)
-                <p class="text-xs text-gray-400 mt-1">Dikonfirmasi pembeli:
-                    {{ $orderVendor->customer_confirmed_at->format('d M Y, H:i') }}</p>
-                @endif
-            </div>
-            @endif
-        </div>
     </div>
     @endif
 </div>

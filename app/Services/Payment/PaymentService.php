@@ -66,6 +66,7 @@ class PaymentService
         $payment->update([
             'payment_method' => 'midtrans',
             'payment_gateway' => 'midtrans',
+            'amount' => $transactionData->grossAmount,
             'status' => PaymentStatus::Pending,
             'payment_proof' => null,
             'confirmed_at' => null,
@@ -114,7 +115,7 @@ class PaymentService
                 return;
             }
 
-            $this->ensureAmountMatches($payment, $callbackData);
+            $this->ensureAmountMatches($payment, $callbackData, $payment->order);
             $this->updatePaymentFromCallback($payment, $callbackData);
             $this->updateOrderFromCallback($payment->order, $callbackData);
 
@@ -142,7 +143,7 @@ class PaymentService
                     return;
                 }
 
-                $this->ensureAmountMatches($payment, $callbackData);
+                $this->ensureAmountMatches($payment, $callbackData, $order);
                 $this->updatePaymentFromCallback($payment, $callbackData);
                 $this->updateOrderFromCallback($order, $callbackData);
             });
@@ -433,18 +434,70 @@ class PaymentService
         ]);
     }
 
-    private function ensureAmountMatches(Payment $payment, MidtransCallbackData $data): void
+    private function ensureAmountMatches(Payment $payment, MidtransCallbackData $data, ?Order $order = null): void
     {
-        $expected = (int) round((float) $payment->amount);
+        $order ??= $payment->relationLoaded('order')
+            ? $payment->order
+            : $payment->order()->first();
 
-        if ($data->grossAmount !== $expected) {
+        $expectedAmounts = array_values(array_unique(array_filter([
+            $this->normalizeMidtransAmount($payment->amount),
+            $order ? $this->normalizeMidtransAmount($order->total_amount) : null,
+            $order ? $this->calculateMidtransGrossAmount($order) : null,
+        ], static fn ($amount) => $amount !== null)));
+
+        if (! in_array($data->grossAmount, $expectedAmounts, true)) {
             Log::channel('payment')->warning('Payment amount mismatch', [
                 'order_id' => $data->orderId,
-                'expected' => $expected,
+                'expected_amounts' => $expectedAmounts,
+                'payment_amount' => $payment->amount,
+                'order_total_amount' => $order?->total_amount,
                 'received' => $data->grossAmount,
             ]);
 
             throw new \UnexpectedValueException('Payment amount does not match the order.');
         }
+    }
+
+    /**
+     * Gross amount harus mengikuti perhitungan yang dipakai saat membuat Snap.
+     */
+    private function calculateMidtransGrossAmount(Order $order): int
+    {
+        $order->loadMissing([
+            'orderVendors.orderItems',
+            'orderVendors.shipment',
+        ]);
+
+        $grossAmount = 0;
+
+        foreach ($order->orderVendors as $orderVendor) {
+            foreach ($orderVendor->orderItems as $item) {
+                $grossAmount += (int) $item->price * (int) $item->quantity;
+            }
+
+            $shipment = $orderVendor->shipment;
+
+            if ($shipment && (int) $shipment->shipping_cost > 0) {
+                $grossAmount += (int) $shipment->shipping_cost;
+            }
+        }
+
+        return $grossAmount > 0
+            ? $grossAmount
+            : $this->normalizeMidtransAmount($order->total_amount);
+    }
+
+    private function normalizeMidtransAmount(int|float|string|null $amount): int
+    {
+        if ($amount === null) {
+            return 0;
+        }
+
+        if (is_string($amount)) {
+            $amount = str_replace([',', ' '], '', $amount);
+        }
+
+        return (int) round((float) $amount);
     }
 }

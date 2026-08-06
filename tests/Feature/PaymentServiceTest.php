@@ -59,10 +59,39 @@ class PaymentServiceTest extends TestCase
         $this->assertSame(OrderStatus::Pending, $order->fresh()->status);
     }
 
+    public function test_notification_accepts_matching_midtrans_gross_amount_when_payment_amount_is_stale(): void
+    {
+        [$order] = $this->createPendingOrder(paymentAmount: 99);
+        $service = new PaymentService(new FakePaymentGateway);
+
+        $service->processNotification($this->notificationPayload($order, 'settlement'));
+
+        $this->assertSame(PaymentStatus::Success, $order->payment->fresh()->status);
+        $this->assertSame(OrderPaymentStatus::Paid, $order->fresh()->payment_status);
+        $this->assertSame(OrderStatus::Paid, $order->fresh()->status);
+    }
+
+    public function test_sync_status_accepts_matching_midtrans_gross_amount_when_payment_amount_is_stale(): void
+    {
+        [$order] = $this->createPendingOrder(paymentAmount: 99);
+        $service = new PaymentService(new FakePaymentGateway([
+            'transaction_id' => 'transaction-1',
+            'transaction_status' => 'settlement',
+            'payment_type' => 'bank_transfer',
+            'gross_amount' => 100,
+        ]));
+
+        $service->syncPaymentStatus($order);
+
+        $this->assertSame(PaymentStatus::Success, $order->payment->fresh()->status);
+        $this->assertSame(OrderPaymentStatus::Paid, $order->fresh()->payment_status);
+        $this->assertSame(OrderStatus::Paid, $order->fresh()->status);
+    }
+
     /**
      * @return array{Order, ProductVariant}
      */
-    private function createPendingOrder(): array
+    private function createPendingOrder(float|int $paymentAmount = 100): array
     {
         $customer = User::factory()->create();
         $vendorUser = User::factory()->create();
@@ -100,7 +129,7 @@ class PaymentServiceTest extends TestCase
             'order_id' => $order->id,
             'payment_method' => 'midtrans',
             'payment_gateway' => 'midtrans',
-            'amount' => 100,
+            'amount' => $paymentAmount,
             'status' => PaymentStatus::Pending,
         ]);
 
@@ -121,6 +150,10 @@ class PaymentServiceTest extends TestCase
 
 final class FakePaymentGateway implements PaymentGatewayInterface
 {
+    public function __construct(
+        private array $statusPayload = [],
+    ) {}
+
     public function createTransaction(SnapTransactionData $data): array
     {
         return ['token' => 'token', 'redirect_url' => 'https://example.test/payment'];
@@ -133,7 +166,9 @@ final class FakePaymentGateway implements PaymentGatewayInterface
 
     public function getTransactionStatus(string $orderId): MidtransCallbackData
     {
-        return MidtransCallbackData::fromNotification(['order_id' => $orderId]);
+        return MidtransCallbackData::fromNotification(array_merge([
+            'order_id' => $orderId,
+        ], $this->statusPayload));
     }
 
     public function cancelTransaction(string $orderId): bool

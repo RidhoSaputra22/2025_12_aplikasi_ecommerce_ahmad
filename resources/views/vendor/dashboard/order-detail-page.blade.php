@@ -219,16 +219,7 @@ $statusColors = [
                     Vendor tidak perlu menginput resi. Nomor resi dan status kirim akan diperbarui oleh pihak kapal.
                 </p>
             </div>
-            @elseif ($orderVendor->status->value === 'shipped')
-            <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-                <p class="text-sm text-indigo-700 mb-3">Pesanan sudah dikirim. Klik tombol di bawah untuk mengkonfirmasi
-                    bahwa paket telah tiba di tujuan.</p>
-                <button type="button" wire:click="confirmDelivery"
-                    wire:confirm="Konfirmasi bahwa pesanan ini sudah tiba di tujuan? Status pengiriman akan berubah menjadi 'Tiba di Tujuan' dan pembeli akan diminta mengkonfirmasi penerimaan."
-                    class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90">
-                    Konfirmasi Paket Tiba
-                </button>
-            </div>
+
             @elseif ($orderVendor->status->value === 'delivered')
             <div class="p-3 bg-teal-50 border border-teal-200 rounded-lg">
                 <div class="flex items-center gap-2 mb-1">

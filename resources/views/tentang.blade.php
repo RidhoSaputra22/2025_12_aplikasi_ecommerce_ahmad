@@ -1,8 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    @component('layouts.navbar')
-    @endcomponent
+    @livewire('navbar')
 
     <!-- About Us Hero Section -->
     <div class="min-h-screen bg-gray-50 py-16">
